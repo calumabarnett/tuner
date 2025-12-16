@@ -14,25 +14,26 @@ class TunerGauge extends StatelessWidget {
     final bool isSharp = centsDeviation > MusicTheory.tuningTolerance;
     final bool isInTune = !isFlat && !isSharp;
 
+    final int cents = centsDeviation.round();
+    final String centsText = '${cents > 0 ? "+" : ""}$cents ct';
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         // LED Indicators
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _LedIndicator(
               isActive: isFlat,
               color: const Color(0xFFCF6679), // Red-ish
               label: '♭',
             ),
-            const SizedBox(width: 24),
             _LedIndicator(
               isActive: isInTune,
               color: const Color(0xFF03DAC6), // Teal/Green-ish
               label: '●',
             ),
-            const SizedBox(width: 24),
             _LedIndicator(
               isActive: isSharp,
               color: const Color(0xFFCF6679),
@@ -45,18 +46,34 @@ class TunerGauge extends StatelessWidget {
         SizedBox(
           height: 120,
           width: double.infinity,
-          child: TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0, end: centsDeviation),
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, child) {
-              return CustomPaint(
-                painter: KorgGaugePainter(
-                  centsDeviation: value,
-                  theme: Theme.of(context),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: centsDeviation),
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return CustomPaint(
+                      painter: KorgGaugePainter(
+                        centsDeviation: value,
+                        theme: Theme.of(context),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+              Align(
+                alignment: Alignment.topCenter,
+                child: Text(
+                  centsText,
+                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -86,15 +103,7 @@ class _LedIndicator extends StatelessWidget {
           decoration: BoxDecoration(
             color: isActive ? color : color.withOpacity(0.1),
             shape: BoxShape.circle,
-            boxShadow: isActive
-                ? [
-                    BoxShadow(
-                      color: color.withOpacity(0.6),
-                      blurRadius: 8,
-                      spreadRadius: 2,
-                    )
-                  ]
-                : [],
+            boxShadow: [],
             border: Border.all(
               color: isActive ? color : color.withOpacity(0.3),
               width: 1,

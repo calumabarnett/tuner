@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class NoteDisplay extends StatelessWidget {
   final String noteName;
   final int octave;
+  final int frequency;
   final bool isSharp;
   final bool isFlat;
   final bool isInTune;
@@ -11,6 +12,7 @@ class NoteDisplay extends StatelessWidget {
     super.key,
     required this.noteName,
     required this.octave,
+    required this.frequency,
     this.isSharp = false,
     this.isFlat = false,
     this.isInTune = false,
@@ -57,6 +59,14 @@ class NoteDisplay extends StatelessWidget {
             ),
           ],
         ),
+        Text(
+          '$frequency Hz',
+          style: theme.textTheme.headlineSmall?.copyWith(
+            color: theme.textTheme.bodyLarge?.color?.withOpacity(0.5),
+            fontWeight: FontWeight.w300,
+          ),
+        ),
+        const SizedBox(height: 8),
         SizedBox(
           height: 32, // Reserved space for "PERFECT"
           child: isInTune

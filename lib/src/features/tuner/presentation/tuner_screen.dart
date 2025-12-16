@@ -80,7 +80,6 @@ class _TunerScreenState extends ConsumerState<TunerScreen> {
                   final bool isInTune = note.centsDeviation.abs() < MusicTheory.tuningTolerance;
                   // Round to integer
                   final int frequency = note.frequency.round();
-                  final int cents = note.centsDeviation.round();
 
                   return Column(
                     children: [
@@ -88,27 +87,10 @@ class _TunerScreenState extends ConsumerState<TunerScreen> {
                       NoteDisplay(
                         noteName: note.noteName,
                         octave: note.octave,
+                        frequency: frequency,
                         isSharp: note.centsDeviation > 0,
                         isFlat: note.centsDeviation < 0,
                         isInTune: isInTune,
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        '$frequency Hz',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.textTheme.bodyLarge?.color?.withOpacity(0.5),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${cents > 0 ? "+" : ""}$cents cents',
-                        style: TextStyle(
-                          color: isInTune
-                              ? theme.colorScheme.secondary
-                              : theme.textTheme.bodyLarge?.color?.withOpacity(0.7),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
                       ),
                       const Spacer(),
                       Padding(
