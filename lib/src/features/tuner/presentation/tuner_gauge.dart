@@ -147,6 +147,23 @@ class KorgGaugePainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
 
+    // Draw Tolerance Range Indicator
+    // Highlight the range [-tuningTolerance, +tuningTolerance]
+    final tolerancePaint = Paint()
+      ..color = theme.colorScheme.secondary.withOpacity(0.15)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 14.0
+      ..strokeCap = StrokeCap.butt;
+
+    // Angle mapping: 0 deviation is UP (-PI/2 in drawArc).
+    // Positive deviation is RIGHT (clockwise).
+    final startAngle = -math.pi / 2 + centsToRad(-MusicTheory.tuningTolerance);
+    final sweepAngle = centsToRad(MusicTheory.tuningTolerance) - centsToRad(-MusicTheory.tuningTolerance);
+
+    // Draw the arc centered roughly on the ticks
+    final arcRect = Rect.fromCircle(center: Offset(centerX, pivotY), radius: radius - 8);
+    canvas.drawArc(arcRect, startAngle, sweepAngle, false, tolerancePaint);
+
     // Draw Ticks
     for (int c = -50; c <= 50; c += 10) {
       final theta = centsToRad(c.toDouble());
