@@ -34,3 +34,22 @@ As an agent working on this repo, strictly adhere to the following guidelines.
 Before submitting any changes, you must:
 1. Run `flutter analyze` and ensure no issues.
 2. Run `flutter test` and ensure all tests pass.
+
+## 7. Design System: Koda
+- **Identity:** Koda. Modern, Minimal, Creative Companion, Swiss/International Style.
+- **Rules:** Strictly 2D. No drop shadows. No gradients. No bevels. Depth is created via color blocking and spacing.
+- **Typography:**
+  - **Headings/Display:** Sora (Weights: ExtraBold/800, SemiBold/600).
+  - **UI/Body:** Manrope (Weights: Medium/500, Bold/700).
+  - **Data/Technical:** JetBrains Mono (for Hz, BPM, etc.).
+- **Color Palette:**
+  - **Background:** Light: `0xFFF8F5F2` (Warm Off-White) / Dark: `0xFF121212` (Deep Charcoal).
+  - **Text/Ink:** Light: `0xFF121212` / Dark: `0xFFFFFFFF`.
+  - **Tuner:** `0xFF4D5BCE` (Electric Indigo).
+  - **Rhythm:** `0xFFFF6B6B` (Coral Red).
+  - **Tone:** `0xFF00D2A1` (Mint Green).
+- **Shape Language:**
+  - Circle = Tuner
+  - Square = Rhythm
+  - Wave = Tone
+- **Pure Flat Rule:** No shadows, use `0xFFF8F5F2` background.

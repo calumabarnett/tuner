@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tuner/src/common_widgets/app_theme.dart';
+import 'package:tuner/src/features/home/presentation/home_screen.dart';
 import 'package:tuner/src/features/settings/presentation/theme_provider.dart';
-import 'package:tuner/src/features/tuner/presentation/tuner_screen.dart';
+import 'package:tuner/src/theme/koda_theme.dart';
 
 void main() {
   runApp(const ProviderScope(child: MainApp()));
@@ -16,11 +16,12 @@ class MainApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
-      title: 'Tuner',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      title: 'Koda',
+      theme: KodaTheme.light,
+      darkTheme: KodaTheme.dark,
       themeMode: themeMode,
-      home: const TunerScreen(),
+      home: const HomeScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
