@@ -53,6 +53,7 @@ void main() {
 
     expect(find.text('A'), findsOneWidget);
     expect(find.text('4'), findsOneWidget);
-    expect(find.text('440.0 Hz'), findsOneWidget);
+    // Updated expectation to integer Hz
+    expect(find.text('440 Hz'), findsOneWidget);
   });
 }

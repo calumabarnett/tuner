@@ -1,8 +1,10 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 
 class NoteDisplay extends StatelessWidget {
   final String noteName;
   final int octave;
+  final int frequency;
   final bool isSharp;
   final bool isFlat;
   final bool isInTune;
@@ -11,6 +13,7 @@ class NoteDisplay extends StatelessWidget {
     super.key,
     required this.noteName,
     required this.octave,
+    required this.frequency,
     this.isSharp = false,
     this.isFlat = false,
     this.isInTune = false,
@@ -22,6 +25,8 @@ class NoteDisplay extends StatelessWidget {
     final color = isInTune
         ? theme.colorScheme.secondary
         : (isSharp || isFlat ? theme.colorScheme.error : theme.textTheme.displayLarge?.color);
+
+    final octaveColor = theme.textTheme.headlineMedium?.color?.withOpacity(0.5);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -50,19 +55,33 @@ class NoteDisplay extends StatelessWidget {
             Text(
               '$octave',
               style: theme.textTheme.headlineMedium?.copyWith(
-                color: Colors.white38,
+                color: octaveColor,
               ),
             ),
           ],
         ),
-        if (isInTune)
-          Text(
-            'PERFECT',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.secondary,
-              letterSpacing: 2.0,
-            ),
+        Text(
+          '$frequency Hz',
+          style: theme.textTheme.headlineSmall?.copyWith(
+            color: theme.textTheme.bodyLarge?.color?.withOpacity(0.5),
+            fontWeight: FontWeight.w300,
           ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 32, // Reserved space for "PERFECT"
+          child: isInTune
+              ? Center(
+                  child: Text(
+                    'PERFECT',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.secondary,
+                      letterSpacing: 2.0,
+                    ),
+                  ),
+                )
+              : null,
+        ),
       ],
     );
   }
