@@ -24,6 +24,7 @@ class RealTunerRepository implements TunerRepository {
   Future<void> start() async {
     // Ensure we don't start multiple times
     try {
+      await _audioCapture.init();
       await _audioCapture.start(
         _listener,
         _onError,
