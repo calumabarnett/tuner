@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_audio_capture/flutter_audio_capture.dart';
@@ -13,7 +12,7 @@ class RealTunerRepository implements TunerRepository {
   final StreamController<double> _controller = StreamController<double>.broadcast();
 
   RealTunerRepository() {
-    _pitchDetector = PitchDetector(44100, 4096);
+    _pitchDetector = PitchDetector();
   }
 
   @override
@@ -62,12 +61,12 @@ class RealTunerRepository implements TunerRepository {
     }
 
     if (buffer.isNotEmpty) {
-      final result = _pitchDetector.getPitch(buffer);
-
-      // result.pitched is boolean, result.pitch is double frequency
-      if (result.pitched) {
-        _controller.add(result.pitch);
-      }
+      _pitchDetector.getPitchFromFloatBuffer(buffer).then((result) {
+        // result.pitched is boolean, result.pitch is double frequency
+        if (result.pitched) {
+          _controller.add(result.pitch);
+        }
+      });
     }
   }
 
