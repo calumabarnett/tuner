@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 
 class NoteDisplay extends StatelessWidget {
@@ -25,7 +26,7 @@ class NoteDisplay extends StatelessWidget {
         ? theme.colorScheme.secondary
         : (isSharp || isFlat ? theme.colorScheme.error : theme.textTheme.displayLarge?.color);
 
-    final octaveColor = theme.textTheme.headlineMedium?.color?.withValues(alpha: 0.5);
+    final octaveColor = theme.textTheme.headlineMedium?.color?.withOpacity(0.5);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -62,7 +63,7 @@ class NoteDisplay extends StatelessWidget {
         Text(
           '$frequency Hz',
           style: theme.textTheme.headlineSmall?.copyWith(
-            color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.5),
+            color: theme.textTheme.bodyLarge?.color?.withOpacity(0.5),
             fontWeight: FontWeight.w300,
           ),
         ),

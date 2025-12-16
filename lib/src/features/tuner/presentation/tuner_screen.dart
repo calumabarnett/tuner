@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -49,7 +50,7 @@ class _TunerScreenState extends ConsumerState<TunerScreen> {
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 3.0,
-                      color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.3),
+                      color: theme.textTheme.bodyLarge?.color?.withOpacity(0.3),
                     ),
                   ),
                   IconButton(
