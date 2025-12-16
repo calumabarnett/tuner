@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
-import 'package:pitch_detector_dart/pitch_detector_dart.dart';
 import 'package:flutter_audio_capture/flutter_audio_capture.dart';
+import 'package:pitch_detector_dart/pitch_detector.dart';
 import 'package:tuner/src/features/tuner/data/tuner_repository.dart';
 
 class RealTunerRepository implements TunerRepository {
