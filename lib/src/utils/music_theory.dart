@@ -40,6 +40,7 @@ class MusicTheory {
   ];
 
   static const double _a4Frequency = 440.0;
+  static const double tuningTolerance = 5.0;
 
   /// Converts a frequency in Hz to a [MusicalNote].
   /// Returns null if the frequency is non-positive or too low to be useful.

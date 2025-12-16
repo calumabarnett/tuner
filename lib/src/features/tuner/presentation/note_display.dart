@@ -23,6 +23,8 @@ class NoteDisplay extends StatelessWidget {
         ? theme.colorScheme.secondary
         : (isSharp || isFlat ? theme.colorScheme.error : theme.textTheme.displayLarge?.color);
 
+    final octaveColor = theme.textTheme.headlineMedium?.color?.withOpacity(0.5);
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -50,19 +52,25 @@ class NoteDisplay extends StatelessWidget {
             Text(
               '$octave',
               style: theme.textTheme.headlineMedium?.copyWith(
-                color: Colors.white38,
+                color: octaveColor,
               ),
             ),
           ],
         ),
-        if (isInTune)
-          Text(
-            'PERFECT',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.secondary,
-              letterSpacing: 2.0,
-            ),
-          ),
+        SizedBox(
+          height: 32, // Reserved space for "PERFECT"
+          child: isInTune
+              ? Center(
+                  child: Text(
+                    'PERFECT',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.secondary,
+                      letterSpacing: 2.0,
+                    ),
+                  ),
+                )
+              : null,
+        ),
       ],
     );
   }
