@@ -69,7 +69,7 @@ class TunerGauge extends StatelessWidget {
                   centsText,
                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                   ),
                 ),
               ),
@@ -101,11 +101,11 @@ class _LedIndicator extends StatelessWidget {
           width: 16,
           height: 16,
           decoration: BoxDecoration(
-            color: isActive ? color : color.withOpacity(0.1),
+            color: isActive ? color : color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
-            boxShadow: [],
+            boxShadow: const [],
             border: Border.all(
-              color: isActive ? color : color.withOpacity(0.3),
+              color: isActive ? color : color.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -148,7 +148,7 @@ class KorgGaugePainter extends CustomPainter {
     }
 
     final paint = Paint()
-      ..color = theme.textTheme.bodyLarge?.color?.withOpacity(0.5) ?? Colors.grey
+      ..color = theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.5) ?? Colors.grey
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 
@@ -159,7 +159,7 @@ class KorgGaugePainter extends CustomPainter {
     // Draw Tolerance Range Indicator
     // Highlight the range [-tuningTolerance, +tuningTolerance]
     final tolerancePaint = Paint()
-      ..color = theme.colorScheme.secondary.withOpacity(0.15)
+      ..color = theme.colorScheme.secondary.withValues(alpha: 0.15)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 14.0
       ..strokeCap = StrokeCap.butt;
@@ -192,7 +192,7 @@ class KorgGaugePainter extends CustomPainter {
         paint.color = theme.textTheme.bodyLarge?.color ?? Colors.black;
       } else {
         paint.strokeWidth = 1.5;
-        paint.color = theme.textTheme.bodyLarge?.color?.withOpacity(0.5) ?? Colors.grey;
+        paint.color = theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.5) ?? Colors.grey;
       }
 
       canvas.drawLine(Offset(innerX, innerY), Offset(outerX, outerY), paint);
@@ -204,7 +204,7 @@ class KorgGaugePainter extends CustomPainter {
            text: label,
            style: theme.textTheme.bodySmall?.copyWith(
              fontSize: 10,
-             color: theme.textTheme.bodyLarge?.color?.withOpacity(0.7),
+             color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
            ),
          );
          textPainter.layout();

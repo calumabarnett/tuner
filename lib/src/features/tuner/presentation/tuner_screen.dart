@@ -49,7 +49,7 @@ class _TunerScreenState extends ConsumerState<TunerScreen> {
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 3.0,
-                      color: theme.textTheme.bodyLarge?.color?.withOpacity(0.3),
+                      color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.3),
                     ),
                   ),
                   IconButton(
