@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:google_fonts/google_fonts.dart' as gf;
 
 class KodaColors {
   // Backgrounds
@@ -19,23 +19,23 @@ class KodaColors {
 class KodaTheme {
   static TextTheme _buildTextTheme(Color inkColor) {
     return TextTheme(
-      displayLarge: GoogleFonts.sora(
+      displayLarge: gf.GoogleFonts.sora(
         color: inkColor,
         fontWeight: FontWeight.w800,
       ),
-      displayMedium: GoogleFonts.sora(
+      displayMedium: gf.GoogleFonts.sora(
         color: inkColor,
         fontWeight: FontWeight.w600,
       ),
-      bodyLarge: GoogleFonts.manrope(
+      bodyLarge: gf.GoogleFonts.manrope(
         color: inkColor,
         fontWeight: FontWeight.w700,
       ),
-      bodyMedium: GoogleFonts.manrope(
+      bodyMedium: gf.GoogleFonts.manrope(
         color: inkColor,
         fontWeight: FontWeight.w500,
       ),
-      labelSmall: GoogleFonts.jetBrainsMono(
+      labelSmall: gf.GoogleFonts.jetBrainsMono(
         color: inkColor,
       ),
     );
@@ -55,7 +55,7 @@ class KodaTheme {
         backgroundColor: KodaColors.lightBackground,
         foregroundColor: KodaColors.lightInk,
         elevation: 0,
-        titleTextStyle: GoogleFonts.sora(
+        titleTextStyle: gf.GoogleFonts.sora(
           color: KodaColors.lightInk,
           fontWeight: FontWeight.w800,
           fontSize: 24,
@@ -78,7 +78,7 @@ class KodaTheme {
         backgroundColor: KodaColors.darkBackground,
         foregroundColor: KodaColors.darkInk,
         elevation: 0,
-        titleTextStyle: GoogleFonts.sora(
+        titleTextStyle: gf.GoogleFonts.sora(
           color: KodaColors.darkInk,
           fontWeight: FontWeight.w800,
           fontSize: 24,
