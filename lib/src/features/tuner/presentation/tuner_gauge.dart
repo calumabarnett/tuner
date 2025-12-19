@@ -69,7 +69,10 @@ class GaugePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
+    // Reduce radius to create padding for labels (labels are outside the ring)
+    // 320 width / 2 = 160. Text is ~20px high.
+    // If radius is 120, we have 40px margin.
+    final radius = (size.width / 2) - 40.0;
 
     // 1. Draw Ring (White, 0.2 opacity)
     final ringPaint = Paint()
@@ -129,9 +132,14 @@ class GaugePainter extends CustomPainter {
       ..strokeWidth = 6.0
       ..strokeCap = StrokeCap.round;
     // Draw distinct notch at top
+    // Notch goes from radius - 12 (inside) to radius + 8 (outside)
+    // Wait, previously I said radius - 12 and radius + 8.
+    // If we want it at the top, dy - radius.
+    // Outside: dy - radius - 8. Inside: dy - radius + 12.
+    // Let's make it protrude slightly out and in.
     canvas.drawLine(
-      Offset(center.dx, center.dy - radius - 12),
-      Offset(center.dx, center.dy - radius + 8),
+      Offset(center.dx, center.dy - radius - 8),
+      Offset(center.dx, center.dy - radius + 12),
       targetMarkerPaint,
     );
 

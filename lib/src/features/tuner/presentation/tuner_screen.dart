@@ -53,6 +53,7 @@ class _TunerScreenState extends ConsumerState<TunerScreen> {
                 Center(
                   child: NoteDisplay(
                     noteName: note.noteName,
+                    octave: note.octave,
                     frequency: note.frequency.round(),
                   ),
                 ),

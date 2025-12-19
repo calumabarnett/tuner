@@ -4,11 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 
 class NoteDisplay extends StatelessWidget {
   final String noteName;
+  final int octave;
   final int frequency;
 
   const NoteDisplay({
     super.key,
     required this.noteName,
+    required this.octave,
     required this.frequency,
   });
 
@@ -17,15 +19,31 @@ class NoteDisplay extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          noteName,
-          style: GoogleFonts.sora(
-            fontSize: 96,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-            height: 1.0,
-          ),
-          textAlign: TextAlign.center,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              noteName,
+              style: GoogleFonts.sora(
+                fontSize: 96,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                height: 1.0,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '$octave',
+              style: GoogleFonts.sora(
+                fontSize: 40,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withOpacity(0.8),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Container(
