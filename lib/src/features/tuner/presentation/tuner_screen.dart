@@ -7,6 +7,7 @@ import 'package:tuner/src/features/tuner/presentation/note_display.dart';
 import 'package:tuner/src/features/tuner/presentation/tuner_gauge.dart';
 import 'package:tuner/src/utils/music_theory.dart';
 
+import '../../../common_widgets/koda_app_bar.dart';
 import '../../../common_widgets/shape_painter.dart';
 import '../../../theme/koda_theme.dart';
 
@@ -45,14 +46,7 @@ class _TunerScreenState extends ConsumerState<TunerScreen> {
         tag: 'tool_card_tuner',
         child: Scaffold(
           backgroundColor: KodaColors.tuner,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ),
+          appBar: const KodaAppBar(),
           body: Stack(
             children: [
               // Decoration
