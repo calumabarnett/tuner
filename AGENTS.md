@@ -5,7 +5,7 @@ As an agent working on this repo, strictly adhere to the following guidelines.
 
 ## 1. Project Goals
 - **Simplicity:** The app should be intuitive, "back to basics", and performant.
-- **Custom UI:** Avoid default Material Design styling. Use custom widgets, dark mode, and minimal aesthetics.
+- **Custom UI:** Avoid default Material Design styling where possible, but use standard navigation components (BottomNavigationBar) for consistency.
 - **Robustness:** Accurate pitch detection with smoothing and noise handling.
 
 ## 2. Architecture & Patterns
@@ -48,8 +48,4 @@ Before submitting any changes, you must:
   - **Tuner:** `0xFF4D5BCE` (Electric Indigo).
   - **Rhythm:** `0xFFFF6B6B` (Coral Red).
   - **Tone:** `0xFF00D2A1` (Mint Green).
-- **Shape Language:**
-  - Circle = Tuner
-  - Square = Rhythm
-  - Wave = Tone
 - **Pure Flat Rule:** No shadows, use `0xFFF8F5F2` background.

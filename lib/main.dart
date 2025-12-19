@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tuner/src/features/home/presentation/home_screen.dart';
+import 'package:tuner/src/features/home/presentation/main_screen.dart';
 import 'package:tuner/src/features/settings/presentation/theme_provider.dart';
 import 'package:tuner/src/theme/koda_theme.dart';
 
@@ -20,7 +20,7 @@ class MainApp extends ConsumerWidget {
       theme: KodaTheme.light,
       darkTheme: KodaTheme.dark,
       themeMode: themeMode,
-      home: const HomeScreen(),
+      home: const MainScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

@@ -1,7 +1,5 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
-import '../../../common_widgets/koda_app_bar.dart';
-import '../../../common_widgets/shape_painter.dart';
 import '../../../theme/koda_theme.dart';
 
 class ToneScreen extends StatelessWidget {
@@ -15,23 +13,16 @@ class ToneScreen extends StatelessWidget {
 
     return Theme(
       data: toneTheme,
-      child: Hero(
-        tag: 'tool_card_tone',
-        child: Scaffold(
-          backgroundColor: KodaColors.tone,
-          appBar: const KodaAppBar(),
-          body: Stack(
-            children: [
-              // Decoration
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: ShapePainter(
-                    shape: KodaShape.wave,
-                    color: Colors.white.withOpacity(0.15),
-                  ),
-                ),
-              ),
-            ],
+      child: Container(
+        color: KodaColors.tone,
+        width: double.infinity,
+        height: double.infinity,
+        child: Center(
+          child: Text(
+            'Tone',
+            style: toneTheme.textTheme.displayMedium?.copyWith(
+              color: Colors.white,
+            ),
           ),
         ),
       ),
