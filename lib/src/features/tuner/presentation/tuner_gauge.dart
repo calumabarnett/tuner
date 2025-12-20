@@ -5,15 +5,30 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:tuner/src/utils/music_theory.dart';
 
 class TunerGauge extends StatelessWidget {
-  final double centsDeviation;
+  final MusicalNote note;
 
-  const TunerGauge({super.key, required this.centsDeviation});
+  const TunerGauge({super.key, required this.note});
 
   @override
   Widget build(BuildContext context) {
-    // Smoothed visual value
+    // We animate on "global cents" to handle wrap-around correctly.
+    // globalCents = midiNumber * 100 + centsDeviation.
+    // For example:
+    // A4 (69) + 45 cents = 6945.
+    // A#4 (70) - 45 cents = 6955.
+    // The difference is 10 cents, so animation will be smooth and short (clockwise).
+
+    final double globalCents = note.midiNumber * 100 + note.centsDeviation;
+
     return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0, end: centsDeviation),
+      tween: Tween<double>(begin: globalCents, end: globalCents), // begin is updated on first build only?
+      // Actually, if we want continuity, we rely on TweenAnimationBuilder's implicit state.
+      // If we pass a new 'end', it animates from current value to new 'end'.
+      // The 'begin' is only used if there is no previous value.
+      // However, if we reconstruct the widget tree (which might happen if parent rebuilds),
+      // we need to make sure state is preserved. Parent uses const constructor?
+      // TunerScreen rebuilds often. If TunerGauge is in the tree, Flutter preserves state if key is same.
+      // We don't provide a key, so element type match is enough.
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
@@ -22,7 +37,7 @@ class TunerGauge extends StatelessWidget {
           height: 320,
           child: CustomPaint(
             painter: GaugePainter(
-              centsDeviation: value,
+              globalCents: value,
             ),
             child: child,
           ),
@@ -34,7 +49,7 @@ class TunerGauge extends StatelessWidget {
             alignment: Alignment.topCenter,
             child: Padding(
               padding: const EdgeInsets.only(top: 0),
-              child: _CentsText(cents: centsDeviation),
+              child: _CentsText(cents: note.centsDeviation),
             ),
           ),
         ],
@@ -63,16 +78,22 @@ class _CentsText extends StatelessWidget {
 }
 
 class GaugePainter extends CustomPainter {
-  final double centsDeviation;
-  GaugePainter({required this.centsDeviation});
+  final double globalCents;
+  GaugePainter({required this.globalCents});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    // Reduce radius to create padding for labels (labels are outside the ring)
-    // 320 width / 2 = 160. Text is ~20px high.
-    // If radius is 120, we have 40px margin.
     final radius = (size.width / 2) - 40.0;
+
+    // Decode globalCents to local deviation relative to the nearest 100.
+    // E.g. 6945 -> 45. 6955 -> -45?
+    // 6955 / 100 = 69.55. Round -> 70.
+    // 6955 - 7000 = -45.
+    // 6945 / 100 = 69.45. Round -> 69.
+    // 6945 - 6900 = +45.
+    final nearestNoteCents = (globalCents / 100.0).round() * 100.0;
+    final centsDeviation = globalCents - nearestNoteCents;
 
     // 1. Draw Ring (White, 0.2 opacity)
     final ringPaint = Paint()
@@ -132,11 +153,6 @@ class GaugePainter extends CustomPainter {
       ..strokeWidth = 6.0
       ..strokeCap = StrokeCap.round;
     // Draw distinct notch at top
-    // Notch goes from radius - 12 (inside) to radius + 8 (outside)
-    // Wait, previously I said radius - 12 and radius + 8.
-    // If we want it at the top, dy - radius.
-    // Outside: dy - radius - 8. Inside: dy - radius + 12.
-    // Let's make it protrude slightly out and in.
     canvas.drawLine(
       Offset(center.dx, center.dy - radius - 8),
       Offset(center.dx, center.dy - radius + 12),
@@ -144,8 +160,36 @@ class GaugePainter extends CustomPainter {
     );
 
     // 5. Indicator Orb
-    final clampedDeviation = centsDeviation.clamp(-50.0, 50.0);
-    final indicatorAngle = centsToAngle(clampedDeviation);
+    // We use the decoded centsDeviation for position on the ring.
+    // Does it need clamping?
+    // If globalCents is animating 6945 -> 6955.
+    // It passes through 6950 which is +50 deviation relative to 69, or -50 relative to 70.
+    // 6950 -> Round is 70. 6950 - 7000 = -50.
+    // 6949 -> Round is 69. 6949 - 6900 = +49.
+    // So visual jump from +49 to -50.
+    // +49 angle: -pi/2 + (49/50)pi = ~pi/2 (bottom left)
+    // -50 angle: -pi/2 + (-50/50)pi = -3pi/2 (bottom right? wait)
+    // Let's recheck angle mapping.
+    // 0 -> -pi/2 (Top)
+    // +50 -> -pi/2 + pi = pi/2 (Bottom)
+    // -50 -> -pi/2 - pi = -3pi/2.
+    // -3pi/2 is equivalent to pi/2 in modulo 2pi.
+    // So visually +50 and -50 meet at the bottom.
+    // So the jump from +49 to -50 is just 1 unit of movement?
+    // +49 -> pi/2 - epsilon.
+    // -50 -> -3pi/2.
+    // pi/2 and -3pi/2 are the same point on circle.
+    // So the jump is visual continuity!
+    // Perfect.
+
+    // We clamp to -50/50 just in case floating point errors or overshoots make it weird?
+    // Actually we shouldn't clamp strictly if we want it to wrap.
+    // But centsToAngle works linearly.
+    // If centsDeviation is -50, angle is -3pi/2.
+    // If centsDeviation is +50, angle is pi/2.
+    // They are same visual spot.
+
+    final indicatorAngle = centsToAngle(centsDeviation);
 
     final orbPaint = Paint()
       ..color = Colors.white
@@ -158,6 +202,6 @@ class GaugePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant GaugePainter oldDelegate) {
-    return oldDelegate.centsDeviation != centsDeviation;
+    return oldDelegate.globalCents != globalCents;
   }
 }

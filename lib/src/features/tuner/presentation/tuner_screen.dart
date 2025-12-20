@@ -59,7 +59,7 @@ class _TunerScreenState extends ConsumerState<TunerScreen> {
                 ),
                 // Gauge (Surrounding)
                 Center(
-                  child: TunerGauge(centsDeviation: note.centsDeviation),
+                  child: TunerGauge(note: note),
                 ),
               ] else ...[
                  Center(
