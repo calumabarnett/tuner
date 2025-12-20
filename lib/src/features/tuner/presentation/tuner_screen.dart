@@ -39,10 +39,10 @@ class _TunerScreenState extends ConsumerState<TunerScreen> {
         final bool isInTune = note != null &&
             note.centsDeviation.abs() < MusicTheory.tuningTolerance;
 
+        // Immediate color change, no transition
         final backgroundColor = isInTune ? successColor : standardColor;
 
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+        return Container(
           color: backgroundColor,
           child: Stack(
             fit: StackFit.expand,
@@ -55,11 +55,19 @@ class _TunerScreenState extends ConsumerState<TunerScreen> {
                     noteName: note.noteName,
                     octave: note.octave,
                     frequency: note.frequency.round(),
+                    isInTune: isInTune,
                   ),
                 ),
                 // Gauge (Surrounding)
-                Center(
-                  child: TunerGauge(note: note),
+                // We want the gauge to be as big as possible.
+                // Padding ensures it doesn't touch the screen edges.
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Center(
+                      child: TunerGauge(note: note),
+                    ),
+                  ),
                 ),
               ] else ...[
                  Center(
