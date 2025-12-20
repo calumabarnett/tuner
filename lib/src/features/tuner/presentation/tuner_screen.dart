@@ -39,10 +39,10 @@ class _TunerScreenState extends ConsumerState<TunerScreen> {
         final bool isInTune = note != null &&
             note.centsDeviation.abs() < MusicTheory.tuningTolerance;
 
-        // Immediate color change, no transition
         final backgroundColor = isInTune ? successColor : standardColor;
 
-        return Container(
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           color: backgroundColor,
           child: Stack(
             fit: StackFit.expand,

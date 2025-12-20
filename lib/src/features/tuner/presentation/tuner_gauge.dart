@@ -22,7 +22,7 @@ class TunerGauge extends StatelessWidget {
 
         return TweenAnimationBuilder<double>(
           tween: Tween<double>(begin: globalCents, end: globalCents),
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 400),
           curve: Curves.easeOutCubic,
           builder: (context, value, child) {
             return SizedBox(
@@ -40,15 +40,8 @@ class TunerGauge extends StatelessWidget {
           child: Stack(
             alignment: Alignment.topCenter,
             children: [
-              // Position text relative to the ring size.
-              // Since we don't know exact pixels in child without logic,
-              // we can rely on Painter to draw it? Or alignment.
-              // User said "above the ring/orb".
-              // If we maximize the ring, "above" is outside the widget.
-              // But user also said "markers inside... so as not to take up space outside".
-              // Let's position the Cents text inside the ring at the top.
               Positioned(
-                top: size * 0.15, // Roughly inside the top of the ring
+                top: size * 0.15,
                 child: _CentsText(
                   cents: note.centsDeviation,
                   color: isInTune ? mintGreen : Colors.white,
@@ -71,12 +64,19 @@ class _CentsText extends StatelessWidget {
   Widget build(BuildContext context) {
     final int c = cents.round();
     final sign = c > 0 ? '+' : '';
-    return Text(
-      '$sign$c ct',
-      style: GoogleFonts.jetBrainsMono(
-        color: color,
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(32),
+      ),
+      child: Text(
+        '$sign$c ct',
+        style: GoogleFonts.jetBrainsMono(
+          color: color,
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -95,8 +95,12 @@ class GaugePainter extends CustomPainter {
     final radius = (size.width / 2) - 10.0;
 
     const mintGreen = Color(0xFF00D2A1);
-    // Indigo background color for stroke cutout effect
-    const indigoBg = Color(0xFF4D5BCE);
+
+    // Indigo background colors for stroke cutout effect
+    const standardBg = Color(0xFF4D5BCE);
+    const successBg = Color(0xFF6874E8);
+    // Use the correct background color for the stroke so it blends in
+    final strokeColor = isInTune ? successBg : standardBg;
 
     // Decode globalCents
     final nearestNoteCents = (globalCents / 100.0).round() * 100.0;
@@ -119,7 +123,7 @@ class GaugePainter extends CustomPainter {
     final tolerancePaint = Paint()
       ..color = mintGreen
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 6.0 // Slightly thicker than ring
+      ..strokeWidth = 4.0 // Exactly same as ring
       ..strokeCap = StrokeCap.butt;
 
     final startAngle = centsToAngle(-MusicTheory.tuningTolerance);
@@ -165,10 +169,10 @@ class GaugePainter extends CustomPainter {
         final label = i > 0 ? '+25' : '-25';
         textPainter.text = TextSpan(
           text: label,
-          style: GoogleFonts.manrope(
+          style: GoogleFonts.sora( // Sora
             color: Colors.white.withOpacity(0.7),
             fontSize: 12,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w300, // Lighter variant
           ),
         );
         textPainter.layout();
@@ -201,22 +205,15 @@ class GaugePainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final orbStrokePaint = Paint()
-      ..color = indigoBg
+      ..color = strokeColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0; // Cutout border
 
-    const orbRadius = 10.0; // Slightly larger orb
+    const orbRadius = 14.0; // Increased size
     final orbX = center.dx + radius * math.cos(indicatorAngle);
     final orbY = center.dy + radius * math.sin(indicatorAngle);
     final orbCenter = Offset(orbX, orbY);
 
-    // Draw stroke (background color) then fill
-    // Actually, to make it "stand out above the ring", we need the stroke to be the background color?
-    // User said "add an indigo stroke to the orb so it stands out above the now 100% opacity ring".
-    // If the ring is white, and orb is white, they merge.
-    // Indigo stroke creates separation.
-
-    // Draw stroke first? No, stroke is border.
     canvas.drawCircle(orbCenter, orbRadius, orbPaint);
     canvas.drawCircle(orbCenter, orbRadius, orbStrokePaint);
   }

@@ -51,19 +51,12 @@ class NoteDisplay extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            '$frequency Hz',
-            style: GoogleFonts.jetBrainsMono(
-              fontSize: 20,
-              fontWeight: FontWeight.normal,
-              color: Colors.white, // Frequency stays white or green? "Make the note next and the orb go green". Frequency is below. Keep white for contrast? User didn't explicitly say.
-            ),
+        Text(
+          '$frequency Hz',
+          style: GoogleFonts.jetBrainsMono(
+            fontSize: 16,
+            fontWeight: FontWeight.normal,
+            color: textColor, // Same color behavior as note
           ),
         ),
       ],
