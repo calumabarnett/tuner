@@ -1,12 +1,11 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class NoteDisplay extends StatelessWidget {
   final String noteName;
   final int octave;
   final int frequency;
-  final bool isSharp;
-  final bool isFlat;
   final bool isInTune;
 
   const NoteDisplay({
@@ -14,22 +13,16 @@ class NoteDisplay extends StatelessWidget {
     required this.noteName,
     required this.octave,
     required this.frequency,
-    this.isSharp = false,
-    this.isFlat = false,
-    this.isInTune = false,
+    required this.isInTune,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = isInTune
-        ? theme.colorScheme.secondary
-        : (isSharp || isFlat ? theme.colorScheme.error : theme.textTheme.displayLarge?.color);
-
-    final octaveColor = theme.textTheme.headlineMedium?.color?.withOpacity(0.5);
+    // Mint Green for In Tune, otherwise White
+    final Color textColor = isInTune ? const Color(0xFF00D2A1) : Colors.white;
 
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -37,50 +30,34 @@ class NoteDisplay extends StatelessWidget {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Text(
-              noteName[0], // The letter (e.g., 'A')
-              style: theme.textTheme.displayLarge?.copyWith(
-                color: color,
-                fontSize: 120,
+              noteName,
+              style: GoogleFonts.sora(
+                fontSize: 96,
+                fontWeight: FontWeight.w800,
+                color: textColor,
+                height: 1.0,
               ),
+              textAlign: TextAlign.center,
             ),
-            if (noteName.length > 1)
-              Text(
-                noteName.substring(1), // The accidental (e.g., '#')
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  color: color,
-                  fontSize: 60,
-                ),
-              ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             Text(
               '$octave',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                color: octaveColor,
+              style: GoogleFonts.sora(
+                fontSize: 40,
+                fontWeight: FontWeight.w600,
+                color: textColor.withOpacity(0.8),
               ),
             ),
           ],
         ),
+        const SizedBox(height: 8),
         Text(
           '$frequency Hz',
-          style: theme.textTheme.headlineSmall?.copyWith(
-            color: theme.textTheme.bodyLarge?.color?.withOpacity(0.5),
-            fontWeight: FontWeight.w300,
+          style: GoogleFonts.jetBrainsMono(
+            fontSize: 16,
+            fontWeight: FontWeight.normal,
+            color: textColor, // Same color behavior as note
           ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 32, // Reserved space for "PERFECT"
-          child: isInTune
-              ? Center(
-                  child: Text(
-                    'PERFECT',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.secondary,
-                      letterSpacing: 2.0,
-                    ),
-                  ),
-                )
-              : null,
         ),
       ],
     );

@@ -6,17 +6,19 @@ class MusicalNote {
   final int octave;
   final double centsDeviation;
   final double frequency;
+  final int midiNumber;
 
   const MusicalNote({
     required this.noteName,
     required this.octave,
     required this.centsDeviation,
     required this.frequency,
+    required this.midiNumber,
   });
 
   @override
   String toString() {
-    return '$noteName$octave ${centsDeviation.toStringAsFixed(1)} cents';
+    return '$noteName$octave (MIDI $midiNumber) ${centsDeviation.toStringAsFixed(1)} cents';
   }
 
   @override
@@ -26,12 +28,13 @@ class MusicalNote {
     return other is MusicalNote &&
       other.noteName == noteName &&
       other.octave == octave &&
+      other.midiNumber == midiNumber &&
       (other.centsDeviation - centsDeviation).abs() < 0.01 &&
       (other.frequency - frequency).abs() < 0.01;
   }
 
   @override
-  int get hashCode => noteName.hashCode ^ octave.hashCode ^ centsDeviation.hashCode ^ frequency.hashCode;
+  int get hashCode => noteName.hashCode ^ octave.hashCode ^ centsDeviation.hashCode ^ frequency.hashCode ^ midiNumber.hashCode;
 }
 
 class MusicTheory {
@@ -67,6 +70,7 @@ class MusicTheory {
       octave: octave,
       centsDeviation: cents,
       frequency: frequency,
+      midiNumber: midiNote,
     );
   }
 }
