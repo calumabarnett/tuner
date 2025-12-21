@@ -42,18 +42,14 @@ class ToneAudioService {
         wavBytes,
       );
 
-      // Start playing immediately at volume 0 (Silent) but PAUSED if possible?
-      // Or just Playing Silent.
-      // Current robust fix attempt:
-      // Play at volume 1.0 but START PAUSED.
-      // SoLoud.play(paused: true)?
-      // The API `play` has `paused`.
+      // Start playing immediately at volume 0.0 (Gated)
+      // Paused: FALSE. We want it running to avoid wake-up latency.
       _currentHandle = await _soloud!.play(
         _sineSource!,
         looping: true,
-        volume: 1.0,
+        volume: 0.0,
         loopingStartAt: Duration.zero,
-        paused: true, // Start paused!
+        paused: false,
       );
     } catch (e) {
       debugPrint('ToneAudioService: Failed to load/play silent wav: $e');
@@ -69,9 +65,9 @@ class ToneAudioService {
           _currentHandle = await _soloud!.play(
             _sineSource!,
             looping: true,
-            volume: 1.0,
+            volume: 0.0, // Start silent
             loopingStartAt: Duration.zero,
-            paused: true,
+            paused: false,
           );
        } else {
          return;
@@ -82,10 +78,7 @@ class ToneAudioService {
     final double speed = frequency / _baseFrequency;
     _soloud!.setRelativePlaySpeed(_currentHandle!, speed);
 
-    // Unpause (Instant)
-    _soloud!.setPause(_currentHandle!, false);
-
-    // Ensure volume is 1.0 (in case we used fades before)
+    // Unmute (Instant)
     _soloud!.setVolume(_currentHandle!, 1.0);
   }
 
@@ -102,8 +95,8 @@ class ToneAudioService {
     if (_soloud == null || _currentHandle == null) return;
 
     if (_soloud!.getIsValidVoiceHandle(_currentHandle!)) {
-      // Pause (Instant)
-      _soloud!.setPause(_currentHandle!, true);
+      // Mute (Instant)
+      _soloud!.setVolume(_currentHandle!, 0.0);
     }
   }
 
