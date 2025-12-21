@@ -21,17 +21,23 @@ class ToneScreen extends ConsumerWidget {
     final state = ref.watch(toneControllerProvider);
     final controller = ref.read(toneControllerProvider.notifier);
 
-    // Calculate display note name
-    // State stores CONCERT index (0-11).
-    // Transposition Offset (Concert - Written).
+    // Logic: State stores CONCERT pitch (0-11).
+    // Transposition Offset = Concert - Written.
     // Written = Concert - Offset.
+    // We want to display WRITTEN note.
     final transOffset = ToneController.transpositions[state.transpositionIndex]['offset'] as int;
+
+    // Written Index
     int writtenIndex = (state.noteIndex - transOffset) % 12;
     if (writtenIndex < 0) writtenIndex += 12;
 
-    final noteNames = _getNoteNames(writtenIndex);
-    final mainNoteName = noteNames[0];
-    final subNoteName = noteNames.length > 1 ? noteNames[1] : null;
+    final writtenNoteNames = _getNoteNames(writtenIndex);
+    final mainNoteName = writtenNoteNames[0];
+    final subNoteName = writtenNoteNames.length > 1 ? writtenNoteNames[1] : null;
+
+    // Concert Pitch Display
+    final concertNoteNames = _getNoteNames(state.noteIndex);
+    final concertName = concertNoteNames.join(' / '); // e.g. "C" or "C# / Db"
 
     // Transposition Name
     final transName = ToneController.transpositions[state.transpositionIndex]['name'] as String;
@@ -59,33 +65,48 @@ class ToneScreen extends ConsumerWidget {
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Transposition Button
-                        TextButton(
-                          onPressed: () {
+                        // Transposition Button (Pill Style)
+                        GestureDetector(
+                          onTap: () {
                             showModalBottomSheet(
                               context: context,
                               backgroundColor: Colors.transparent,
                               builder: (_) => const TranspositionSheet(),
                             );
                           },
-                          child: Text(
-                            transName,
-                            style: GoogleFonts.manrope(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  state.transpositionIndex == 0 ? 'Concert Pitch' : 'Key: $transName',
+                                  style: GoogleFonts.manrope(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.arrow_drop_down, color: Colors.white, size: 18),
+                              ],
                             ),
                           ),
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 24),
 
-                        // Note Name
+                        // Written Note Name
                         Text(
                           mainNoteName,
                           style: GoogleFonts.sora(
                             color: Colors.white,
-                            fontSize: 64, // Big!
+                            fontSize: 72, // Big
                             fontWeight: FontWeight.w800,
                             height: 1.0,
                           ),
@@ -100,7 +121,21 @@ class ToneScreen extends ConsumerWidget {
                             ),
                           ),
 
-                        const SizedBox(height: 16),
+                        // Subtitle: Concert Pitch (if transposed)
+                        if (state.transpositionIndex != 0)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              'Concert: $concertName',
+                              style: GoogleFonts.manrope(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+
+                        const SizedBox(height: 24),
 
                         // Octave Control
                         Row(
@@ -111,16 +146,16 @@ class ToneScreen extends ConsumerWidget {
                               icon: const Icon(Icons.remove, color: Colors.white),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 '${state.octave}',
-                              style: GoogleFonts.jetBrainsMono(
+                                style: GoogleFonts.jetBrainsMono(
                                   color: Colors.white,
-                                  fontSize: 16,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -144,16 +179,20 @@ class ToneScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(
                     children: [
+                      // Note Grid
+                      // Use Flexible to allow grid to take available space
+                      // Adjust aspect ratio if needed or use shrinking
                       const Expanded(
                         child: NoteGrid(),
                       ),
 
                       // Play/Pause Button
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24.0),
+                        padding: const EdgeInsets.only(bottom: 24.0, top: 16.0),
                         child: GestureDetector(
                           onTap: controller.togglePlay,
-                          child: Container(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
                             width: 80,
                             height: 80,
                             decoration: BoxDecoration(

@@ -31,15 +31,6 @@ class _WaveRingState extends State<WaveRing> with SingleTickerProviderStateMixin
   }
 
   @override
-  void didUpdateWidget(WaveRing oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Even if not playing, we keep the controller running for smooth transitions
-    // or we could stop it to save resources.
-    // The prompt says "When the note is sounding, animate".
-    // But for a smooth UI, usually we just animate opacity or amplitude.
-  }
-
-  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
@@ -47,17 +38,28 @@ class _WaveRingState extends State<WaveRing> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return CustomPaint(
-          painter: _WavePainter(
-            animationValue: _controller.value,
-            isPlaying: widget.isPlaying,
-            color: widget.color,
-            strokeWidth: widget.strokeWidth,
-          ),
-          child: Container(),
+    // We animate the "amplitude" (0.0 to 1.0) based on isPlaying.
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(
+        begin: widget.isPlaying ? 1.0 : 0.0,
+        end: widget.isPlaying ? 1.0 : 0.0,
+      ),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      builder: (context, amplitude, child) {
+        return AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return CustomPaint(
+              painter: _WavePainter(
+                animationValue: _controller.value,
+                amplitude: amplitude,
+                color: widget.color,
+                strokeWidth: widget.strokeWidth,
+              ),
+              child: Container(),
+            );
+          },
         );
       },
     );
@@ -66,13 +68,13 @@ class _WaveRingState extends State<WaveRing> with SingleTickerProviderStateMixin
 
 class _WavePainter extends CustomPainter {
   final double animationValue;
-  final bool isPlaying;
+  final double amplitude; // 0.0 to 1.0
   final Color color;
   final double strokeWidth;
 
   _WavePainter({
     required this.animationValue,
-    required this.isPlaying,
+    required this.amplitude,
     required this.color,
     required this.strokeWidth,
   });
@@ -80,7 +82,7 @@ class _WavePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
-      ..color = color.withOpacity(0.2)
+      ..color = color // Solid white (or passed color)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
@@ -91,22 +93,21 @@ class _WavePainter extends CustomPainter {
     final Path path = Path();
     const int segments = 100;
 
-    // We create a loopable noise/wave effect.
-    // 3 sine waves of different frequencies added together.
+    // Wave parameters
+    // Max deviation from circle
+    final double maxOffset = 10.0 * amplitude;
 
     for (int i = 0; i <= segments; i++) {
       final double angle = (i / segments) * 2 * pi;
 
       double offset = 0;
-      if (isPlaying) {
-        // Create a wave effect that travels around the ring
-        // Wave 1: 3 lobes, moving forward
+      if (amplitude > 0.01) {
+        // Wave 1: 3 lobes
         final double w1 = sin(angle * 3 + animationValue * 2 * pi);
-        // Wave 2: 5 lobes, moving backward slowly
+        // Wave 2: 5 lobes
         final double w2 = sin(angle * 5 - animationValue * 2 * pi);
 
-        // Amplitude modulation
-        offset = (w1 + w2) * 5.0;
+        offset = (w1 + w2) * maxOffset * 0.5;
       }
 
       final double r = radius + offset;
@@ -127,6 +128,7 @@ class _WavePainter extends CustomPainter {
   @override
   bool shouldRepaint(_WavePainter oldDelegate) {
     return oldDelegate.animationValue != animationValue ||
-           oldDelegate.isPlaying != isPlaying;
+           oldDelegate.amplitude != amplitude ||
+           oldDelegate.color != color;
   }
 }

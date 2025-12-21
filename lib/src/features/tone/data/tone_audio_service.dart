@@ -23,8 +23,6 @@ class ToneAudioService {
 
     _soloud = SoLoud.instance;
     try {
-      // In newer versions, init returns void or Future<void> and throws on error,
-      // or returns a result object. Based on analyzer, it returns void (so just await).
       await _soloud!.init();
     } catch (e) {
       debugPrint('ToneAudioService: Failed to init SoLoud: $e');
@@ -42,36 +40,45 @@ class ToneAudioService {
       _sineSource = await _soloud!.loadMem(
         'sine_wave',
         wavBytes,
-        // loadMode removed as per analyzer error
+      );
+
+      // Start playing immediately at volume 0 (Silent)
+      // This avoids latency when user actually hits play.
+      _currentHandle = await _soloud!.play(
+        _sineSource!,
+        looping: true,
+        volume: 0.0,
+        loopingStartAt: Duration.zero,
       );
     } catch (e) {
-      debugPrint('ToneAudioService: Failed to load wav: $e');
+      debugPrint('ToneAudioService: Failed to load/play silent wav: $e');
     }
   }
 
   Future<void> play(double frequency) async {
-    if (_soloud == null || _sineSource == null) return;
+    if (_soloud == null || _currentHandle == null) return;
 
-    // Calculate speed based on target frequency vs base frequency
-    final double speed = frequency / _baseFrequency;
-
-    if (_currentHandle != null && _soloud!.getIsValidVoiceHandle(_currentHandle!)) {
-      // Already playing, just update pitch
-      _soloud!.setRelativePlaySpeed(_currentHandle!, speed);
-    } else {
-      // Start playing
-      try {
-        _currentHandle = await _soloud!.play(
-          _sineSource!,
-          looping: true,
-          volume: 1.0,
-          loopingStartAt: Duration.zero,
-        );
-        _soloud!.setRelativePlaySpeed(_currentHandle!, speed);
-      } catch (e) {
-        debugPrint('ToneAudioService: Failed to play: $e');
-      }
+    // Safety check handle
+    if (!_soloud!.getIsValidVoiceHandle(_currentHandle!)) {
+       // Try to recover? Re-play?
+       if (_sineSource != null) {
+          _currentHandle = await _soloud!.play(
+            _sineSource!,
+            looping: true,
+            volume: 0.0,
+            loopingStartAt: Duration.zero,
+          );
+       } else {
+         return;
+       }
     }
+
+    // Set Pitch
+    final double speed = frequency / _baseFrequency;
+    _soloud!.setRelativePlaySpeed(_currentHandle!, speed);
+
+    // Fade Volume In
+    _soloud!.fadeVolume(_currentHandle!, 1.0, const Duration(milliseconds: 50));
   }
 
   void setFrequency(double frequency) {
@@ -87,13 +94,15 @@ class ToneAudioService {
     if (_soloud == null || _currentHandle == null) return;
 
     if (_soloud!.getIsValidVoiceHandle(_currentHandle!)) {
-      _soloud!.stop(_currentHandle!);
+      // Fade Volume Out
+      _soloud!.fadeVolume(_currentHandle!, 0.0, const Duration(milliseconds: 50));
     }
-    _currentHandle = null;
   }
 
   void dispose() {
-    stop();
+    if (_soloud != null && _currentHandle != null) {
+       _soloud!.stop(_currentHandle!);
+    }
     _soloud?.deinit();
     _soloud = null;
   }

@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,13 +24,22 @@ class TranspositionSheet extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            child: Text(
-              'Select Transposition',
-              style: GoogleFonts.sora(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Select Key / Transposition',
+                  style: GoogleFonts.sora(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                )
+              ],
             ),
           ),
           const Divider(),
@@ -43,10 +53,17 @@ class TranspositionSheet extends ConsumerWidget {
 
                 return ListTile(
                   title: Text(
-                    item['name'] as String,
+                    index == 0 ? 'Concert Pitch (C)' : 'Key of ${item['name']}',
                     style: GoogleFonts.manrope(
                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
                       color: isSelected ? const Color(0xFF00D2A1) : Colors.black,
+                    ),
+                  ),
+                  subtitle: Text(
+                    index == 0 ? 'Standard Tuning' : 'Written C sounds like Concert ${item['name']}',
+                     style: GoogleFonts.manrope(
+                      fontSize: 12,
+                      color: Colors.grey[600],
                     ),
                   ),
                   trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF00D2A1)) : null,
