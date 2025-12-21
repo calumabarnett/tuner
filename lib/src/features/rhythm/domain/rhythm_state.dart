@@ -1,7 +1,8 @@
 import 'package:equatable/equatable.dart';
+
 import 'beat_state.dart';
-import 'time_signature.dart';
 import 'sound_profile.dart';
+import 'time_signature.dart';
 
 class RhythmState extends Equatable {
   final bool isPlaying;
