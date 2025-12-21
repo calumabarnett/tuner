@@ -28,12 +28,28 @@ class TunerGauge extends StatelessWidget {
             return SizedBox(
               width: size,
               height: size,
-              child: CustomPaint(
-                painter: GaugePainter(
-                  globalCents: value,
-                  isInTune: isInTune,
-                ),
-                child: child,
+              child: Stack(
+                fit: StackFit.expand,
+                alignment: Alignment.center,
+                children: [
+                  // 1. Static Background (Ring, Ticks, Labels)
+                  // Wrapped in RepaintBoundary to cache the expensive painting
+                  // of ticks and text labels.
+                  const RepaintBoundary(
+                    child: CustomPaint(
+                      painter: StaticGaugePainter(),
+                    ),
+                  ),
+                  // 2. Dynamic Foreground (Orb)
+                  CustomPaint(
+                    painter: GaugeIndicatorPainter(
+                      globalCents: value,
+                      isInTune: isInTune,
+                    ),
+                  ),
+                  // 3. Child (Text) - Passed from outside builder
+                  if (child != null) child,
+                ],
               ),
             );
           },
@@ -82,29 +98,17 @@ class _CentsText extends StatelessWidget {
   }
 }
 
-class GaugePainter extends CustomPainter {
-  final double globalCents;
-  final bool isInTune;
-
-  GaugePainter({required this.globalCents, required this.isInTune});
+/// Paints the static elements of the gauge (Ring, Ticks, Tolerance Arc).
+/// This painter should be cached via RepaintBoundary.
+class StaticGaugePainter extends CustomPainter {
+  const StaticGaugePainter();
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     // Maximize ring. Leave small padding for stroke width.
     final radius = (size.width / 2) - 10.0;
-
     const mintGreen = Color(0xFF00D2A1);
-
-    // Indigo background colors for stroke cutout effect
-    const standardBg = Color(0xFF4D5BCE);
-    const successBg = Color(0xFF6874E8);
-    // Use the correct background color for the stroke so it blends in
-    final strokeColor = isInTune ? successBg : standardBg;
-
-    // Decode globalCents
-    final nearestNoteCents = (globalCents / 100.0).round() * 100.0;
-    final centsDeviation = globalCents - nearestNoteCents;
 
     // 1. Draw Ring (White, 100% opacity)
     final ringPaint = Paint()
@@ -114,7 +118,6 @@ class GaugePainter extends CustomPainter {
     canvas.drawCircle(center, radius, ringPaint);
 
     // 2. Tolerance Range Arc (Always Green)
-    // +/- 5 cents at the top
     double centsToAngle(double c) {
       // 0 -> -pi/2
       return -math.pi / 2 + (c / 50.0) * math.pi;
@@ -196,6 +199,40 @@ class GaugePainter extends CustomPainter {
       Offset(center.dx, center.dy - radius + 12),
       targetMarkerPaint,
     );
+  }
+
+  @override
+  bool shouldRepaint(covariant StaticGaugePainter oldDelegate) {
+    return false; // Static elements never change
+  }
+}
+
+/// Paints the dynamic indicator orb.
+class GaugeIndicatorPainter extends CustomPainter {
+  final double globalCents;
+  final bool isInTune;
+
+  GaugeIndicatorPainter({required this.globalCents, required this.isInTune});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width / 2) - 10.0;
+    const mintGreen = Color(0xFF00D2A1);
+
+    // Indigo background colors for stroke cutout effect
+    const standardBg = Color(0xFF4D5BCE);
+    const successBg = Color(0xFF6874E8);
+    // Use the correct background color for the stroke so it blends in
+    final strokeColor = isInTune ? successBg : standardBg;
+
+    // Decode globalCents
+    final nearestNoteCents = (globalCents / 100.0).round() * 100.0;
+    final centsDeviation = globalCents - nearestNoteCents;
+
+    double centsToAngle(double c) {
+      return -math.pi / 2 + (c / 50.0) * math.pi;
+    }
 
     // 5. Indicator Orb
     final indicatorAngle = centsToAngle(centsDeviation);
@@ -219,7 +256,7 @@ class GaugePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant GaugePainter oldDelegate) {
+  bool shouldRepaint(covariant GaugeIndicatorPainter oldDelegate) {
     return oldDelegate.globalCents != globalCents || oldDelegate.isInTune != isInTune;
   }
 }
