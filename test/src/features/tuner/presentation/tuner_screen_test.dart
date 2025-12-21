@@ -30,6 +30,15 @@ class DeniedMicrophonePermissionNotifier extends MicrophonePermissionNotifier {
   Future<void> request() async {}
 }
 
+PermissionStatus mockPermissionStatus = PermissionStatus.denied;
+
+class MutableMicrophonePermissionNotifier extends MicrophonePermissionNotifier {
+  @override
+  Future<PermissionStatus> build() async {
+    return mockPermissionStatus;
+  }
+}
+
 void main() {
   late MockTunerRepo mockRepo;
 
@@ -96,5 +105,37 @@ void main() {
 
     expect(find.text('Microphone Required'), findsOneWidget);
     expect(find.text('Grant Permission'), findsOneWidget);
+  });
+
+  testWidgets('TunerScreen rechecks permission on app resume', (tester) async {
+    when(() => mockRepo.getFrequencyStream()).thenAnswer((_) => Stream.value(0.0));
+    mockPermissionStatus = PermissionStatus.denied;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tunerRepositoryProvider.overrideWithValue(mockRepo),
+          microphonePermissionProvider.overrideWith(MutableMicrophonePermissionNotifier.new),
+        ],
+        child: const MaterialApp(home: TunerScreen()),
+      ),
+    );
+
+    await tester.pump();
+    expect(find.text('Microphone Required'), findsOneWidget);
+
+    // Change status
+    mockPermissionStatus = PermissionStatus.granted;
+
+    // Simulate Pause then Resume to trigger observer
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+
+    // Trigger rebuild
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Listening...'), findsOneWidget);
   });
 }
