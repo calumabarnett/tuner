@@ -76,6 +76,7 @@ class _MainScreenState extends State<MainScreen> {
         child: NavigationBar(
           selectedIndex: _currentIndex,
           indicatorColor: _getIndicatorColor(_currentIndex),
+          animationDuration: Duration.zero,
           onDestinationSelected: (index) {
             setState(() {
               _currentIndex = index;
@@ -87,7 +88,7 @@ class _MainScreenState extends State<MainScreen> {
               label: 'Tuner',
             ),
             NavigationDestination(
-              icon: Icon(Icons.library_music),
+              icon: Icon(Icons.music_note),
               label: 'Rhythm',
             ),
             NavigationDestination(
