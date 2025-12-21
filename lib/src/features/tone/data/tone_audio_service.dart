@@ -42,13 +42,18 @@ class ToneAudioService {
         wavBytes,
       );
 
-      // Start playing immediately at volume 0 (Silent)
-      // This avoids latency when user actually hits play.
+      // Start playing immediately at volume 0 (Silent) but PAUSED if possible?
+      // Or just Playing Silent.
+      // Current robust fix attempt:
+      // Play at volume 1.0 but START PAUSED.
+      // SoLoud.play(paused: true)?
+      // The API `play` has `paused`.
       _currentHandle = await _soloud!.play(
         _sineSource!,
         looping: true,
-        volume: 0.0,
+        volume: 1.0,
         loopingStartAt: Duration.zero,
+        paused: true, // Start paused!
       );
     } catch (e) {
       debugPrint('ToneAudioService: Failed to load/play silent wav: $e');
@@ -60,13 +65,13 @@ class ToneAudioService {
 
     // Safety check handle
     if (!_soloud!.getIsValidVoiceHandle(_currentHandle!)) {
-       // Try to recover? Re-play?
        if (_sineSource != null) {
           _currentHandle = await _soloud!.play(
             _sineSource!,
             looping: true,
-            volume: 0.0,
+            volume: 1.0,
             loopingStartAt: Duration.zero,
+            paused: true,
           );
        } else {
          return;
@@ -77,8 +82,11 @@ class ToneAudioService {
     final double speed = frequency / _baseFrequency;
     _soloud!.setRelativePlaySpeed(_currentHandle!, speed);
 
-    // Fade Volume In
-    _soloud!.fadeVolume(_currentHandle!, 1.0, const Duration(milliseconds: 50));
+    // Unpause (Instant)
+    _soloud!.setPause(_currentHandle!, false);
+
+    // Ensure volume is 1.0 (in case we used fades before)
+    _soloud!.setVolume(_currentHandle!, 1.0);
   }
 
   void setFrequency(double frequency) {
@@ -94,8 +102,8 @@ class ToneAudioService {
     if (_soloud == null || _currentHandle == null) return;
 
     if (_soloud!.getIsValidVoiceHandle(_currentHandle!)) {
-      // Fade Volume Out
-      _soloud!.fadeVolume(_currentHandle!, 0.0, const Duration(milliseconds: 50));
+      // Pause (Instant)
+      _soloud!.setPause(_currentHandle!, true);
     }
   }
 

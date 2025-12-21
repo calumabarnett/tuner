@@ -1,5 +1,4 @@
 // ignore_for_file: deprecated_member_use
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -44,141 +43,40 @@ class NoteGrid extends ConsumerWidget {
             if (writtenIndex < 0) writtenIndex += 12;
 
             final labels = _labels[writtenIndex];
+            // Format: "C" or "C#/Db"
+            final labelText = labels.join('/');
 
-            // Button Interaction:
-            // We move interaction logic inside _NoteButton to manage the timer state locally.
-            // We pass callbacks for actions.
-
-            return _NoteButton(
-               labels: labels,
-               isSelected: isSelected,
-               isPlayingGlobal: state.isPlaying,
-               onTapSelect: () => controller.selectNote(index),
-               onStartMomentary: () => controller.startMomentary(index),
-               onStopMomentary: () => controller.stopMomentary(),
+            return GestureDetector(
+              onTap: () => controller.selectNote(index),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 100),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.white
+                      : Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Text(
+                        labelText,
+                        style: GoogleFonts.manrope(
+                          color: isSelected ? const Color(0xFF00D2A1) : Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             );
           },
         );
       }
-    );
-  }
-}
-
-class _NoteButton extends StatefulWidget {
-  final List<String> labels;
-  final bool isSelected;
-  final bool isPlayingGlobal;
-  final VoidCallback onTapSelect;
-  final VoidCallback onStartMomentary;
-  final VoidCallback onStopMomentary;
-
-  const _NoteButton({
-    required this.labels,
-    required this.isSelected,
-    required this.isPlayingGlobal,
-    required this.onTapSelect,
-    required this.onStartMomentary,
-    required this.onStopMomentary,
-  });
-
-  @override
-  State<_NoteButton> createState() => _NoteButtonState();
-}
-
-class _NoteButtonState extends State<_NoteButton> {
-  Timer? _holdTimer;
-  bool _isHolding = false;
-
-  @override
-  void dispose() {
-    _holdTimer?.cancel();
-    super.dispose();
-  }
-
-  void _handleDown() {
-    if (widget.isPlayingGlobal) {
-      // If sound is already ON (Toggle Mode), switch note immediately.
-      widget.onTapSelect();
-    } else {
-      // Sound is OFF. Start timer to differentiate Tap vs Hold.
-      _isHolding = false;
-      _holdTimer?.cancel();
-      _holdTimer = Timer(const Duration(milliseconds: 100), () {
-        // Timer fired: It's a hold. Start playing.
-        _isHolding = true;
-        widget.onStartMomentary();
-      });
-    }
-  }
-
-  void _handleUpOrCancel() {
-    if (widget.isPlayingGlobal) {
-      // Toggle Mode: Do nothing on release.
-    } else {
-      // Sound WAS OFF.
-      if (_holdTimer != null && _holdTimer!.isActive) {
-        // Timer still active: It was a TAP (Short duration).
-        _holdTimer!.cancel();
-        // Just select, don't play.
-        widget.onTapSelect();
-      } else if (_isHolding) {
-        // It was a HOLD. Stop playing.
-        widget.onStopMomentary();
-      }
-      _isHolding = false;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: (_) => _handleDown(),
-      onPointerUp: (_) => _handleUpOrCancel(),
-      onPointerCancel: (_) => _handleUpOrCancel(),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        decoration: BoxDecoration(
-          color: widget.isSelected
-              ? Colors.white
-              : Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Center(
-          child: widget.labels.length > 1
-             ? Column(
-                 mainAxisAlignment: MainAxisAlignment.center,
-                 children: [
-                   Text(
-                      widget.labels[0],
-                      style: GoogleFonts.manrope(
-                        color: widget.isSelected ? const Color(0xFF00D2A1) : Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        height: 1.0,
-                      ),
-                   ),
-                   const SizedBox(height: 2),
-                   Text(
-                      widget.labels[1],
-                      style: GoogleFonts.manrope(
-                        color: widget.isSelected ? const Color(0xFF00D2A1).withOpacity(0.8) : Colors.white.withOpacity(0.8),
-                        fontSize: 16, // Slightly smaller
-                        fontWeight: FontWeight.w600,
-                        height: 1.0,
-                      ),
-                   ),
-                 ],
-               )
-             : Text(
-                widget.labels.first,
-                style: GoogleFonts.manrope(
-                  color: widget.isSelected ? const Color(0xFF00D2A1) : Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-        ),
-      ),
     );
   }
 }

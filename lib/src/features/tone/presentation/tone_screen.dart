@@ -62,6 +62,11 @@ class ToneScreen extends ConsumerWidget {
                     ),
 
                     // Center Content
+                    // We want a BALANCED layout.
+                    // The content should be vertically centered.
+                    // If subtitle exists, it pushes content.
+                    // To keep "Balance", we can just let Column MainAxisAlignment.center handle it.
+                    // Reverted the `Visibility(maintainSize: true)`.
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -102,9 +107,6 @@ class ToneScreen extends ConsumerWidget {
                         const SizedBox(height: 24),
 
                         // Written Note Name
-                        // Auto-size or wrapping if "C# / Db" is too long?
-                        // "C# / Db" is short enough for 72px font on most screens? Maybe not.
-                        // Let's use FittedBox or check length.
                         FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Padding(
@@ -123,13 +125,8 @@ class ToneScreen extends ConsumerWidget {
                         ),
 
                         // Subtitle: Concert Pitch (if transposed)
-                        // Use Visibility to reserve space
-                        Visibility(
-                          visible: state.transpositionIndex != 0,
-                          maintainSize: true,
-                          maintainAnimation: true,
-                          maintainState: true,
-                          child: Padding(
+                        if (state.transpositionIndex != 0)
+                          Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
                               'Concert: $concertName',
@@ -140,7 +137,6 @@ class ToneScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
-                        ),
 
                         const SizedBox(height: 24),
 

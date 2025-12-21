@@ -50,17 +50,24 @@ class TranspositionSheet extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final item = ToneController.transpositions[index];
                 final isSelected = state.transpositionIndex == index;
+                final name = item['name'] as String;
+
+                // Consistency: Ensure pairs are shown with '/' if they have it?
+                // The `transpositions` list has "Db / C#" format manually entered.
+                // I should ensure they are consistent with Grid (e.g. C# / Db vs Db / C#).
+                // Grid uses C#/Db. Controller uses Db / C#.
+                // I will trust the Controller string for now, but formatted nicely.
 
                 return ListTile(
                   title: Text(
-                    index == 0 ? 'Concert Pitch (C)' : 'Key of ${item['name']}',
+                    index == 0 ? 'Concert Pitch (C)' : 'Key of $name',
                     style: GoogleFonts.manrope(
                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
                       color: isSelected ? const Color(0xFF00D2A1) : Colors.black,
                     ),
                   ),
                   subtitle: Text(
-                    index == 0 ? 'Standard Tuning' : 'Written C sounds like Concert ${item['name']}',
+                    index == 0 ? 'Standard Tuning' : 'Written C sounds like Concert $name',
                      style: GoogleFonts.manrope(
                       fontSize: 12,
                       color: Colors.grey[600],
