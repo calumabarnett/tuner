@@ -64,18 +64,31 @@ class _CentsText extends StatelessWidget {
   Widget build(BuildContext context) {
     final int c = cents.round();
     final sign = c > 0 ? '+' : '';
+
+    String semanticLabel;
+    if (c == 0) {
+      semanticLabel = '0 cents perfect';
+    } else {
+      final direction = c > 0 ? 'sharp' : 'flat';
+      semanticLabel = '${c.abs()} cents $direction';
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(32),
       ),
-      child: Text(
-        '$sign$c ct',
-        style: GoogleFonts.jetBrainsMono(
-          color: color,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
+      child: Semantics(
+        label: semanticLabel,
+        excludeSemantics: true,
+        child: Text(
+          '$sign$c ct',
+          style: GoogleFonts.jetBrainsMono(
+            color: color,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
