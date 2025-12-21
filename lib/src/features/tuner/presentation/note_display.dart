@@ -21,34 +21,42 @@ class NoteDisplay extends StatelessWidget {
     // Mint Green for In Tune, otherwise White
     final Color textColor = isInTune ? const Color(0xFF00D2A1) : Colors.white;
 
+    // Improve semantics: "C#" -> "C Sharp"
+    final String semanticNote = noteName.replaceAll('#', ' Sharp');
+    final String semanticLabel = '$semanticNote $octave';
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(
-              noteName,
-              style: GoogleFonts.sora(
-                fontSize: 96,
-                fontWeight: FontWeight.w800,
-                color: textColor,
-                height: 1.0,
+        Semantics(
+          label: semanticLabel,
+          excludeSemantics: true,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                noteName,
+                style: GoogleFonts.sora(
+                  fontSize: 96,
+                  fontWeight: FontWeight.w800,
+                  color: textColor,
+                  height: 1.0,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '$octave',
-              style: GoogleFonts.sora(
-                fontSize: 40,
-                fontWeight: FontWeight.w600,
-                color: textColor.withOpacity(0.8),
+              const SizedBox(width: 4),
+              Text(
+                '$octave',
+                style: GoogleFonts.sora(
+                  fontSize: 40,
+                  fontWeight: FontWeight.w600,
+                  color: textColor.withOpacity(0.8),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 8),
         Text(
