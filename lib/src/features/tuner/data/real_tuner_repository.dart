@@ -11,11 +11,6 @@ class RealTunerRepository implements TunerRepository {
 
   final StreamController<double> _controller = StreamController<double>.broadcast();
 
-  // Smoothing state
-  double? _prevFrequency;
-  final double _alpha = 0.2; // Smoothing factor
-  final double _probabilityThreshold = 0.95; // High threshold for noise
-
   RealTunerRepository() {
     _pitchDetector = PitchDetector();
   }
@@ -27,7 +22,7 @@ class RealTunerRepository implements TunerRepository {
 
   @override
   Future<void> start() async {
-    _prevFrequency = null;
+    // Ensure we don't start multiple times
     try {
       await _audioCapture.init();
       await _audioCapture.start(
@@ -51,8 +46,13 @@ class RealTunerRepository implements TunerRepository {
   }
 
   void _listener(dynamic obj) {
+    // flutter_audio_capture returns Float32List or List<double> depending on platform/config
+    // We need to check the type.
+    // Documentation says it returns Float32List for AudioBuffer usually.
+
     var buffer = Float64List(0);
 
+    // Convert to Float64List for pitch_detector_dart which likely expects List<double>
     if (obj is Float32List) {
       buffer = Float64List.fromList(obj);
     } else if (obj is List<double>) {
@@ -63,23 +63,9 @@ class RealTunerRepository implements TunerRepository {
 
     if (buffer.isNotEmpty) {
       _pitchDetector.getPitchFromFloatBuffer(buffer).then((result) {
-        if (result.pitched && result.probability >= _probabilityThreshold) {
-          final double newFreq = result.pitch;
-
-          if (_prevFrequency == null) {
-            _prevFrequency = newFreq;
-          } else {
-            // Check for large jump (e.g. potential new note or octave error)
-            // If difference is > 20Hz, snap to new value.
-            if ((newFreq - _prevFrequency!).abs() > 20.0) {
-              _prevFrequency = newFreq;
-            } else {
-              // Apply EMA
-              _prevFrequency = _prevFrequency! + _alpha * (newFreq - _prevFrequency!);
-            }
-          }
-
-          _controller.add(_prevFrequency!);
+        // result.pitched is boolean, result.pitch is double frequency
+        if (result.pitched) {
+          _controller.add(result.pitch);
         }
       });
     }

@@ -52,7 +52,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 10)); // Stream emit
 
     expect(find.text('A'), findsOneWidget);
-    expect(find.text('4'), findsOneWidget); // Octave is back
+    expect(find.text('4'), findsOneWidget);
     // Updated expectation to integer Hz
     expect(find.text('440 Hz'), findsOneWidget);
   });
