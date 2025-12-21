@@ -3,16 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
 import 'package:logging/logging.dart';
 import '../domain/beat_state.dart';
+import '../domain/sound_profile.dart';
 
 class RhythmEngine {
   final _logger = Logger('RhythmEngine');
   SoLoud? _soloud;
-  AudioSource? _tickSource;
+  AudioSource? _sineSource;
+  AudioSource? _sawSource;
 
   Timer? _timer;
   bool _isPlaying = false;
   int _bpm = 120;
   List<BeatState> _pattern = [];
+  SoundProfile _profile = SoundProfile.digitalClick;
   int _currentBeatIndex = 0;
 
   // Timing
@@ -34,12 +37,17 @@ class RhythmEngine {
       }
     }
 
-    // Create a simple click sound (Sine wave)
+    // Create synthesized sounds
     try {
-        _tickSource = await _soloud!.loadWaveform(WaveForm.sin, true, 0.25, 0.0);
+        _sineSource = await _soloud!.loadWaveform(WaveForm.sin, true, 0.25, 0.0);
+        _sawSource = await _soloud!.loadWaveform(WaveForm.saw, true, 0.25, 0.0);
     } catch (e) {
         _logger.severe('Failed to load waveform: $e');
     }
+  }
+
+  void setSoundProfile(SoundProfile profile) {
+    _profile = profile;
   }
 
   void setBpm(int bpm) {
@@ -113,26 +121,38 @@ class RhythmEngine {
   }
 
   Future<void> _playTick() async {
-    if (_tickSource == null || _soloud == null) return;
+    if (_soloud == null) return;
 
     final state = _pattern.isNotEmpty ? _pattern[_currentBeatIndex] : BeatState.standard;
 
     if (state == BeatState.mute) return;
 
-    // Pitch/Volume based on state
+    AudioSource? source;
     double pitch = 1.0;
     double volume = 0.8;
 
-    if (state == BeatState.accent) {
-      pitch = 2.0; // Higher pitch
-      volume = 1.0;
-    } else {
-      pitch = 1.0;
-      volume = 0.6;
+    switch (_profile) {
+      case SoundProfile.digitalClick:
+        source = _sineSource;
+        pitch = (state == BeatState.accent) ? 2.0 : 1.0;
+        volume = 0.8;
+        break;
+      case SoundProfile.woodblock:
+        source = _sineSource;
+        pitch = (state == BeatState.accent) ? 2.5 : 2.0;
+        volume = 1.0;
+        break;
+      case SoundProfile.mechanicalTick:
+        source = _sawSource;
+        pitch = (state == BeatState.accent) ? 1.5 : 1.0;
+        volume = 0.6;
+        break;
     }
 
+    if (source == null) return;
+
     try {
-      final handle = await _soloud!.play(_tickSource!, volume: volume, paused: true);
+      final handle = await _soloud!.play(source, volume: volume, paused: true);
       _soloud!.setRelativePlaySpeed(handle, pitch);
       _soloud!.setPause(handle, false);
     } catch (e) {

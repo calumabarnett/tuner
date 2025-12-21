@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tuner/src/theme/koda_theme.dart';
+import '../domain/sound_profile.dart';
 import '../domain/time_signature.dart';
 import 'components/ruler_slider.dart';
 import 'components/solar_system_ring.dart';
@@ -311,6 +312,32 @@ class _ConfigSheet extends ConsumerWidget {
                ),
              ],
            ),
+           const SizedBox(height: 24),
+
+           Text('Sound', style: GoogleFonts.manrope(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+           const SizedBox(height: 16),
+           Wrap(
+             spacing: 8,
+             runSpacing: 8,
+             children: SoundProfile.values.map((p) {
+               final isSelected = state.soundProfile == p;
+               return ChoiceChip(
+                 label: Text(p.label, style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+                 selected: isSelected,
+                 onSelected: (selected) {
+                   if (selected) controller.setSoundProfile(p);
+                 },
+                 selectedColor: KodaColors.rhythm,
+                 backgroundColor: Colors.white10,
+                 labelStyle: TextStyle(
+                   color: isSelected ? Colors.white : Colors.white70,
+                 ),
+                 side: BorderSide.none,
+                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+               );
+             }).toList(),
+           ),
+
            const SizedBox(height: 48),
         ],
       ),

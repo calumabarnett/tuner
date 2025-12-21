@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/rhythm_engine.dart';
 import '../domain/beat_state.dart';
 import '../domain/rhythm_state.dart';
+import '../domain/sound_profile.dart';
 import '../domain/time_signature.dart';
 
 class RhythmController extends StateNotifier<RhythmState> {
@@ -34,6 +35,11 @@ class RhythmController extends StateNotifier<RhythmState> {
     if (bpm < 20 || bpm > 300) return;
     _engine.setBpm(bpm);
     state = state.copyWith(bpm: bpm);
+  }
+
+  void setSoundProfile(SoundProfile profile) {
+    _engine.setSoundProfile(profile);
+    state = state.copyWith(soundProfile: profile);
   }
 
   void tapTempo() {

@@ -1,12 +1,14 @@
 import 'package:equatable/equatable.dart';
 import 'beat_state.dart';
 import 'time_signature.dart';
+import 'sound_profile.dart';
 
 class RhythmState extends Equatable {
   final bool isPlaying;
   final int bpm;
   final TimeSignature timeSignature;
   final List<BeatState> beatPattern;
+  final SoundProfile soundProfile;
 
   // Audio sync timestamp. Null if stopped.
   // Using microseconds for high precision sync.
@@ -17,6 +19,7 @@ class RhythmState extends Equatable {
     required this.bpm,
     required this.timeSignature,
     required this.beatPattern,
+    required this.soundProfile,
     this.startTimeMicroseconds,
   });
 
@@ -31,6 +34,7 @@ class RhythmState extends Equatable {
         BeatState.standard,
         BeatState.standard
       ],
+      soundProfile: SoundProfile.digitalClick,
       startTimeMicroseconds: null,
     );
   }
@@ -40,6 +44,7 @@ class RhythmState extends Equatable {
     int? bpm,
     TimeSignature? timeSignature,
     List<BeatState>? beatPattern,
+    SoundProfile? soundProfile,
     int? startTimeMicroseconds,
   }) {
     return RhythmState(
@@ -47,6 +52,7 @@ class RhythmState extends Equatable {
       bpm: bpm ?? this.bpm,
       timeSignature: timeSignature ?? this.timeSignature,
       beatPattern: beatPattern ?? this.beatPattern,
+      soundProfile: soundProfile ?? this.soundProfile,
       startTimeMicroseconds: startTimeMicroseconds ?? this.startTimeMicroseconds,
     );
   }
@@ -57,6 +63,7 @@ class RhythmState extends Equatable {
         bpm,
         timeSignature,
         beatPattern,
+        soundProfile,
         startTimeMicroseconds,
       ];
 }

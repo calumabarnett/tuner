@@ -4,6 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:tuner/src/features/rhythm/data/rhythm_engine.dart';
 import 'package:tuner/src/features/rhythm/domain/beat_state.dart';
 import 'package:tuner/src/features/rhythm/domain/rhythm_state.dart';
+import 'package:tuner/src/features/rhythm/domain/sound_profile.dart';
 import 'package:tuner/src/features/rhythm/domain/time_signature.dart';
 import 'package:tuner/src/features/rhythm/presentation/rhythm_controller.dart';
 
@@ -15,6 +16,7 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(<BeatState>[]);
+    registerFallbackValue(SoundProfile.digitalClick);
   });
 
   setUp(() {
@@ -23,6 +25,7 @@ void main() {
     when(() => mockEngine.startTimeMicroseconds).thenReturn(0);
     when(() => mockEngine.setBpm(any())).thenReturn(null);
     when(() => mockEngine.setPattern(any())).thenReturn(null);
+    when(() => mockEngine.setSoundProfile(any())).thenReturn(null);
     when(() => mockEngine.start()).thenReturn(null);
     when(() => mockEngine.stop()).thenReturn(null);
 
