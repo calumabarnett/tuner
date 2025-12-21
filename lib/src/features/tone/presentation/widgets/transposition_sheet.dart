@@ -28,7 +28,7 @@ class TranspositionSheet extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Select Key / Transposition',
+                  'Select Transposition',
                   style: GoogleFonts.sora(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,

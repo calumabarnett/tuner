@@ -1,4 +1,5 @@
 // ignore_for_file: deprecated_member_use
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -22,21 +23,8 @@ class NoteGrid extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Calculate cell size to fit 3x4 grid in available space
-        // 3 columns, 4 rows
-        // If height is constrained, we might need to adjust aspect ratio.
-        // Or just let GridView sort it out.
-        // Ideally, we want squares or near-squares.
-        // constraint.maxHeight / 4 vs constraint.maxWidth / 3.
-
-        // Let's use standard grid with aspect ratio 1.0 (Square).
-        // If it overflows, GridView scrolls. But we want no scroll.
-        // So we should calculate aspect ratio to FIT.
-        // width / 3 = cellWidth. height / 4 = cellHeight.
-        // childAspectRatio = cellWidth / cellHeight.
-
-        final cellWidth = (constraints.maxWidth - 24) / 3; // 24 = spacing (12*2)
-        final cellHeight = (constraints.maxHeight - 36) / 4; // 36 = spacing (12*3)
+        final cellWidth = (constraints.maxWidth - 24) / 3;
+        final cellHeight = (constraints.maxHeight - 36) / 4;
         final aspectRatio = cellWidth / cellHeight;
 
         return GridView.builder(
@@ -49,62 +37,25 @@ class NoteGrid extends ConsumerWidget {
             mainAxisSpacing: 12,
           ),
           itemBuilder: (context, index) {
-            // Index 0..11 represents Concert Pitch C..B
             final isSelected = state.noteIndex == index;
 
-            // Calculate Written Note for Label
+            // Written Note for Label
             int writtenIndex = (index - transOffset) % 12;
             if (writtenIndex < 0) writtenIndex += 12;
 
             final labels = _labels[writtenIndex];
 
-            return GestureDetector(
-              onTap: () => controller.selectNote(index),
-              onTapDown: (_) {
-                 if (!state.isPlaying) {
-                   controller.startMomentary(index);
-                 } else {
-                   controller.selectNote(index);
-                 }
-              },
-              onTapUp: (_) {
-                // We handle stopping in button state or verify here?
-                // The complexity of momentary play:
-                // We rely on the Button Widget's listener for robust Up detection
-                // OR we can just do nothing here and let the button handle visual feedback?
-                // NO. Logic must happen.
-                // But `_NoteButton` uses `Listener`?
-                // Actually, GestureDetector covers tap logic.
-                // If I use `Listener` inside `_NoteButton` for Up event, that's better.
-                // But `GestureDetector` `onTapUp` is also good.
-                // The issue is `onTap` vs `onTapUp`.
-              },
-              child: _NoteButton(
-                 labels: labels,
-                 isSelected: isSelected,
-                 onDown: () {
-                    if (!state.isPlaying) {
-                      controller.startMomentary(index);
-                    } else {
-                      controller.selectNote(index);
-                    }
-                 },
-                 onUp: () {
-                   // This callback is triggered by the Listener in _NoteButton
-                   // Note: We need access to the CURRENT state to decide whether to stop.
-                   // But `ref` here provides current state access? No, closure captures context.
-                   // We need to check if we should stop.
-                   // The logic "Stop ONLY if we started it" is hard to track purely here.
-                   // But checking "isPlaying" is not enough.
+            // Button Interaction:
+            // We move interaction logic inside _NoteButton to manage the timer state locally.
+            // We pass callbacks for actions.
 
-                   // Let's rely on the controller method `stopMomentary`
-                   // which unconditionally stops?
-                   // If I was already playing (toggle mode), I don't want to stop.
-                   // So the `_NoteButton` needs to know "Did I start it?".
-                   // `_NoteButton` tracks `_wasPlayingBeforeInteraction`.
-                 },
-                 stopMomentaryCallback: () => controller.stopMomentary(),
-              ),
+            return _NoteButton(
+               labels: labels,
+               isSelected: isSelected,
+               isPlayingGlobal: state.isPlaying,
+               onTapSelect: () => controller.selectNote(index),
+               onStartMomentary: () => controller.startMomentary(index),
+               onStopMomentary: () => controller.stopMomentary(),
             );
           },
         );
@@ -116,16 +67,18 @@ class NoteGrid extends ConsumerWidget {
 class _NoteButton extends StatefulWidget {
   final List<String> labels;
   final bool isSelected;
-  final VoidCallback onDown;
-  final VoidCallback onUp;
-  final VoidCallback stopMomentaryCallback;
+  final bool isPlayingGlobal;
+  final VoidCallback onTapSelect;
+  final VoidCallback onStartMomentary;
+  final VoidCallback onStopMomentary;
 
   const _NoteButton({
     required this.labels,
     required this.isSelected,
-    required this.onDown,
-    required this.onUp,
-    required this.stopMomentaryCallback,
+    required this.isPlayingGlobal,
+    required this.onTapSelect,
+    required this.onStartMomentary,
+    required this.onStopMomentary,
   });
 
   @override
@@ -133,43 +86,90 @@ class _NoteButton extends StatefulWidget {
 }
 
 class _NoteButtonState extends State<_NoteButton> {
-  bool _startedPlay = false;
+  Timer? _holdTimer;
+  bool _isHolding = false;
+
+  @override
+  void dispose() {
+    _holdTimer?.cancel();
+    super.dispose();
+  }
+
+  void _handleDown() {
+    if (widget.isPlayingGlobal) {
+      // If sound is already ON (Toggle Mode), switch note immediately.
+      widget.onTapSelect();
+    } else {
+      // Sound is OFF. Start timer to differentiate Tap vs Hold.
+      _isHolding = false;
+      _holdTimer?.cancel();
+      _holdTimer = Timer(const Duration(milliseconds: 100), () {
+        // Timer fired: It's a hold. Start playing.
+        _isHolding = true;
+        widget.onStartMomentary();
+      });
+    }
+  }
+
+  void _handleUpOrCancel() {
+    if (widget.isPlayingGlobal) {
+      // Toggle Mode: Do nothing on release.
+    } else {
+      // Sound WAS OFF.
+      if (_holdTimer != null && _holdTimer!.isActive) {
+        // Timer still active: It was a TAP (Short duration).
+        _holdTimer!.cancel();
+        // Just select, don't play.
+        widget.onTapSelect();
+      } else if (_isHolding) {
+        // It was a HOLD. Stop playing.
+        widget.onStopMomentary();
+      }
+      _isHolding = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, child) {
-         final isPlaying = ref.watch(toneControllerProvider).isPlaying;
-
-         return Listener(
-          onPointerDown: (_) {
-            _startedPlay = !isPlaying; // If NOT playing, we are starting it.
-            widget.onDown();
-          },
-          onPointerUp: (_) {
-            if (_startedPlay) {
-              // We started it, so we stop it.
-              widget.stopMomentaryCallback();
-              _startedPlay = false;
-            }
-          },
-          onPointerCancel: (_) {
-             if (_startedPlay) {
-              widget.stopMomentaryCallback();
-              _startedPlay = false;
-            }
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 100),
-            decoration: BoxDecoration(
-              color: widget.isSelected
-                  ? Colors.white
-                  : Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              child: Text(
-                // Only show primary name (first label) as per request
+    return Listener(
+      onPointerDown: (_) => _handleDown(),
+      onPointerUp: (_) => _handleUpOrCancel(),
+      onPointerCancel: (_) => _handleUpOrCancel(),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        decoration: BoxDecoration(
+          color: widget.isSelected
+              ? Colors.white
+              : Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: widget.labels.length > 1
+             ? Column(
+                 mainAxisAlignment: MainAxisAlignment.center,
+                 children: [
+                   Text(
+                      widget.labels[0],
+                      style: GoogleFonts.manrope(
+                        color: widget.isSelected ? const Color(0xFF00D2A1) : Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        height: 1.0,
+                      ),
+                   ),
+                   const SizedBox(height: 2),
+                   Text(
+                      widget.labels[1],
+                      style: GoogleFonts.manrope(
+                        color: widget.isSelected ? const Color(0xFF00D2A1).withOpacity(0.8) : Colors.white.withOpacity(0.8),
+                        fontSize: 16, // Slightly smaller
+                        fontWeight: FontWeight.w600,
+                        height: 1.0,
+                      ),
+                   ),
+                 ],
+               )
+             : Text(
                 widget.labels.first,
                 style: GoogleFonts.manrope(
                   color: widget.isSelected ? const Color(0xFF00D2A1) : Colors.white,
@@ -177,10 +177,8 @@ class _NoteButtonState extends State<_NoteButton> {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-            ),
-          ),
-        );
-      }
+        ),
+      ),
     );
   }
 }

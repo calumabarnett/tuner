@@ -32,12 +32,12 @@ class ToneScreen extends ConsumerWidget {
     if (writtenIndex < 0) writtenIndex += 12;
 
     final writtenNoteNames = _getNoteNames(writtenIndex);
-    final mainNoteName = writtenNoteNames[0];
-    final subNoteName = writtenNoteNames.length > 1 ? writtenNoteNames[1] : null;
+    // Combine names if multiple (e.g. C# / Db)
+    final mainNoteText = writtenNoteNames.join(' / ');
 
     // Concert Pitch Display
     final concertNoteNames = _getNoteNames(state.noteIndex);
-    final concertName = concertNoteNames.join(' / '); // e.g. "C" or "C# / Db"
+    final concertName = concertNoteNames.join(' / ');
 
     // Transposition Name
     final transName = ToneController.transpositions[state.transpositionIndex]['name'] as String;
@@ -102,28 +102,34 @@ class ToneScreen extends ConsumerWidget {
                         const SizedBox(height: 24),
 
                         // Written Note Name
-                        Text(
-                          mainNoteName,
-                          style: GoogleFonts.sora(
-                            color: Colors.white,
-                            fontSize: 72, // Big
-                            fontWeight: FontWeight.w800,
-                            height: 1.0,
-                          ),
-                        ),
-                        if (subNoteName != null)
-                          Text(
-                            subNoteName,
-                            style: GoogleFonts.sora(
-                              color: Colors.white.withOpacity(0.6),
-                              fontSize: 24,
-                              fontWeight: FontWeight.w600,
+                        // Auto-size or wrapping if "C# / Db" is too long?
+                        // "C# / Db" is short enough for 72px font on most screens? Maybe not.
+                        // Let's use FittedBox or check length.
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                            child: Text(
+                              mainNoteText,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.sora(
+                                color: Colors.white,
+                                fontSize: 72,
+                                fontWeight: FontWeight.w800,
+                                height: 1.0,
+                              ),
                             ),
                           ),
+                        ),
 
                         // Subtitle: Concert Pitch (if transposed)
-                        if (state.transpositionIndex != 0)
-                          Padding(
+                        // Use Visibility to reserve space
+                        Visibility(
+                          visible: state.transpositionIndex != 0,
+                          maintainSize: true,
+                          maintainAnimation: true,
+                          maintainState: true,
+                          child: Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
                               'Concert: $concertName',
@@ -134,6 +140,7 @@ class ToneScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
+                        ),
 
                         const SizedBox(height: 24),
 
@@ -180,8 +187,6 @@ class ToneScreen extends ConsumerWidget {
                   child: Column(
                     children: [
                       // Note Grid
-                      // Use Flexible to allow grid to take available space
-                      // Adjust aspect ratio if needed or use shrinking
                       const Expanded(
                         child: NoteGrid(),
                       ),
