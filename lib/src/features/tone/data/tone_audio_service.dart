@@ -57,6 +57,12 @@ class ToneAudioService {
   }
 
   Future<void> play(double frequency) async {
+    // SECURITY: Validate frequency to prevent invalid native calls
+    if (!isValidFrequency(frequency)) {
+      debugPrint('ToneAudioService: Invalid frequency rejected: $frequency');
+      return;
+    }
+
     if (_soloud == null || _currentHandle == null) return;
 
     // Safety check handle
@@ -83,12 +89,21 @@ class ToneAudioService {
   }
 
   void setFrequency(double frequency) {
+     if (!isValidFrequency(frequency)) return;
+
      if (_soloud == null || _currentHandle == null) return;
 
      if (_soloud!.getIsValidVoiceHandle(_currentHandle!)) {
         final double speed = frequency / _baseFrequency;
         _soloud!.setRelativePlaySpeed(_currentHandle!, speed);
      }
+  }
+
+  @visibleForTesting
+  bool isValidFrequency(double frequency) {
+    // Reject NaN, Infinity, and non-positive values.
+    // SoLoud engine might handle them, but we want to fail fast and safe.
+    return frequency.isFinite && frequency > 0;
   }
 
   void stop() {
