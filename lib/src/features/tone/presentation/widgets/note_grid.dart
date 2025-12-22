@@ -18,7 +18,8 @@ class NoteGrid extends ConsumerWidget {
     final state = ref.watch(toneControllerProvider);
     final controller = ref.read(toneControllerProvider.notifier);
 
-    final transOffset = ToneController.transpositions[state.transpositionIndex]['offset'] as int;
+    // Grid is STATIC. Button 0 is always C.
+    // The Labels are fixed.
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -36,13 +37,11 @@ class NoteGrid extends ConsumerWidget {
             mainAxisSpacing: 12,
           ),
           itemBuilder: (context, index) {
+            // Index 0..11 represents Written C..B
+            // State tracks Written Note Index.
             final isSelected = state.noteIndex == index;
 
-            // Written Note for Label
-            int writtenIndex = (index - transOffset) % 12;
-            if (writtenIndex < 0) writtenIndex += 12;
-
-            final labels = _labels[writtenIndex];
+            final labels = _labels[index];
             // Format: "C" or "C#/Db"
             final labelText = labels.join('/');
 

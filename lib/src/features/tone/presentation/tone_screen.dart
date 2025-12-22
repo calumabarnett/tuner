@@ -21,22 +21,18 @@ class ToneScreen extends ConsumerWidget {
     final state = ref.watch(toneControllerProvider);
     final controller = ref.read(toneControllerProvider.notifier);
 
-    // Logic: State stores CONCERT pitch (0-11).
-    // Transposition Offset = Concert - Written.
-    // Written = Concert - Offset.
-    // We want to display WRITTEN note.
-    final transOffset = ToneController.transpositions[state.transpositionIndex]['offset'] as int;
-
-    // Written Index
-    int writtenIndex = (state.noteIndex - transOffset) % 12;
-    if (writtenIndex < 0) writtenIndex += 12;
-
-    final writtenNoteNames = _getNoteNames(writtenIndex);
-    // Combine names if multiple (e.g. C# / Db)
+    // Logic: State stores WRITTEN pitch (0-11).
+    // Written Note Name = Directly from state.noteIndex.
+    final writtenNoteNames = _getNoteNames(state.noteIndex);
     final mainNoteText = writtenNoteNames.join(' / ');
 
-    // Concert Pitch Display
-    final concertNoteNames = _getNoteNames(state.noteIndex);
+    // Concert Pitch Calculation
+    // Concert = Written + Offset
+    final transOffset = ToneController.transpositions[state.transpositionIndex]['offset'] as int;
+    int concertIndex = (state.noteIndex + transOffset) % 12;
+    if (concertIndex < 0) concertIndex += 12;
+
+    final concertNoteNames = _getNoteNames(concertIndex);
     final concertName = concertNoteNames.join(' / ');
 
     // Transposition Name
@@ -62,11 +58,6 @@ class ToneScreen extends ConsumerWidget {
                     ),
 
                     // Center Content
-                    // We want a BALANCED layout.
-                    // The content should be vertically centered.
-                    // If subtitle exists, it pushes content.
-                    // To keep "Balance", we can just let Column MainAxisAlignment.center handle it.
-                    // Reverted the `Visibility(maintainSize: true)`.
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
