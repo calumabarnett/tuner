@@ -181,27 +181,33 @@ class ToneScreen extends ConsumerWidget {
                       // Play/Pause Button
                       Padding(
                         padding: const EdgeInsets.only(bottom: 24.0, top: 16.0),
-                        child: GestureDetector(
-                          onTap: controller.togglePlay,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              state.isPlaying ? Icons.pause : Icons.play_arrow,
-                              color: KodaColors.tone,
-                              size: 40,
+                        child: Semantics(
+                          button: true,
+                          enabled: true,
+                          label: state.isPlaying ? 'Pause Tone' : 'Play Tone',
+                          hint: 'Starts or stops the tone generation',
+                          child: GestureDetector(
+                            onTap: controller.togglePlay,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                state.isPlaying ? Icons.pause : Icons.play_arrow,
+                                color: KodaColors.tone,
+                                size: 40,
+                              ),
                             ),
                           ),
                         ),
