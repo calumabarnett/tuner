@@ -27,7 +27,20 @@ class _WaveRingState extends State<WaveRing> with SingleTickerProviderStateMixin
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
-    )..repeat();
+    );
+    if (widget.isPlaying) {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(WaveRing oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isPlaying && !oldWidget.isPlaying) {
+      if (!_controller.isAnimating) {
+        _controller.repeat();
+      }
+    }
   }
 
   @override
@@ -46,6 +59,11 @@ class _WaveRingState extends State<WaveRing> with SingleTickerProviderStateMixin
       ),
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
+      onEnd: () {
+        if (!widget.isPlaying) {
+          _controller.stop();
+        }
+      },
       builder: (context, amplitude, child) {
         return AnimatedBuilder(
           animation: _controller,
