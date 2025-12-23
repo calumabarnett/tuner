@@ -18,10 +18,10 @@ class ToneAudioService {
   // Base frequency for the generated sample
   static const double _baseFrequency = 440.0;
 
-  Future<void> init() async {
+  Future<void> init({SoLoud? soloudInstance}) async {
     if (_soloud != null) return;
 
-    _soloud = SoLoud.instance;
+    _soloud = soloudInstance ?? SoLoud.instance;
     try {
       await _soloud!.init();
     } catch (e) {
@@ -57,6 +57,8 @@ class ToneAudioService {
   }
 
   Future<void> play(double frequency) async {
+    if (frequency <= 0 || !frequency.isFinite) return;
+
     if (_soloud == null || _currentHandle == null) return;
 
     // Safety check handle
@@ -83,6 +85,8 @@ class ToneAudioService {
   }
 
   void setFrequency(double frequency) {
+     if (frequency <= 0 || !frequency.isFinite) return;
+
      if (_soloud == null || _currentHandle == null) return;
 
      if (_soloud!.getIsValidVoiceHandle(_currentHandle!)) {
