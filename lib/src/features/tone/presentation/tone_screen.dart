@@ -62,35 +62,54 @@ class ToneScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // Transposition Button (Pill Style)
-                        GestureDetector(
-                          onTap: () {
-                            showModalBottomSheet(
-                              context: context,
-                              backgroundColor: Colors.transparent,
-                              builder: (_) => const TranspositionSheet(),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  state.transpositionIndex == 0 ? 'Concert Pitch' : 'Key: $transName',
-                                  style: GoogleFonts.manrope(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                        Semantics(
+                          button: true,
+                          label: 'Change Transposition',
+                          value: state.transpositionIndex == 0
+                              ? 'Concert Pitch'
+                              : 'Key: $transName',
+                          child: GestureDetector(
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => const TranspositionSheet(),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
                                 ),
-                                const SizedBox(width: 4),
-                                const Icon(Icons.arrow_drop_down, color: Colors.white, size: 18),
-                              ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    state.transpositionIndex == 0
+                                        ? 'Concert Pitch'
+                                        : 'Key: $transName',
+                                    style: GoogleFonts.manrope(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.arrow_drop_down,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -138,6 +157,7 @@ class ToneScreen extends ConsumerWidget {
                             IconButton(
                               onPressed: () => controller.setOctave(state.octave - 1),
                               icon: const Icon(Icons.remove, color: Colors.white),
+                              tooltip: 'Decrease Octave',
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -157,6 +177,7 @@ class ToneScreen extends ConsumerWidget {
                             IconButton(
                               onPressed: () => controller.setOctave(state.octave + 1),
                               icon: const Icon(Icons.add, color: Colors.white),
+                              tooltip: 'Increase Octave',
                             ),
                           ],
                         ),
@@ -181,27 +202,31 @@ class ToneScreen extends ConsumerWidget {
                       // Play/Pause Button
                       Padding(
                         padding: const EdgeInsets.only(bottom: 24.0, top: 16.0),
-                        child: GestureDetector(
-                          onTap: controller.togglePlay,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              state.isPlaying ? Icons.pause : Icons.play_arrow,
-                              color: KodaColors.tone,
-                              size: 40,
+                        child: Semantics(
+                          button: true,
+                          label: state.isPlaying ? 'Pause Tone' : 'Play Tone',
+                          child: GestureDetector(
+                            onTap: controller.togglePlay,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                state.isPlaying ? Icons.pause : Icons.play_arrow,
+                                color: KodaColors.tone,
+                                size: 40,
+                              ),
                             ),
                           ),
                         ),
