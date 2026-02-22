@@ -176,6 +176,7 @@ class _ControlButton extends StatelessWidget {
       children: [
         IconButton(
           onPressed: onPressed,
+          tooltip: label,
           icon: Icon(icon, color: Colors.white, size: 32),
           style: IconButton.styleFrom(
             backgroundColor: Colors.white.withOpacity(0.1),
