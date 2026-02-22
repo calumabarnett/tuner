@@ -7,7 +7,6 @@ import '../application/rhythm_controller.dart';
 import '../application/rhythm_state.dart';
 import 'widgets/beat_grid.dart';
 import 'widgets/note_icon.dart';
-import 'widgets/rhythm_pulse.dart';
 
 class RhythmScreen extends ConsumerStatefulWidget {
   const RhythmScreen({super.key});
@@ -25,7 +24,11 @@ class _RhythmScreenState extends ConsumerState<RhythmScreen> with SingleTickerPr
     super.initState();
     _measureController = AnimationController(vsync: this);
     _measureController.addListener(_updateBeat);
-    _syncController();
+
+    // Initial sync
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncController();
+    });
   }
 
   @override
@@ -36,10 +39,13 @@ class _RhythmScreenState extends ConsumerState<RhythmScreen> with SingleTickerPr
   }
 
   void _updateBeat() {
+    if (!mounted) return;
     final state = ref.read(rhythmControllerProvider);
     if (!state.isPlaying) return;
 
-    final int newBeat = (_measureController.value * state.beatsPerMeasure).floor().clamp(0, state.beatsPerMeasure - 1);
+    // Use a small epsilon to avoid being exactly at the start of the next beat too early
+    final double value = _measureController.value;
+    final int newBeat = (value * state.beatsPerMeasure).floor().clamp(0, state.beatsPerMeasure - 1);
 
     if (newBeat != _currentBeat) {
       setState(() {
@@ -48,22 +54,26 @@ class _RhythmScreenState extends ConsumerState<RhythmScreen> with SingleTickerPr
     }
   }
 
-  void _syncController() {
+  Future<void> _syncController() async {
     final state = ref.read(rhythmControllerProvider);
+    _measureController.stop();
+
     if (state.isPlaying) {
       final measureDurationMs = ((60000 / state.bpm) * state.beatsPerMeasure).round();
       _measureController.duration = Duration(milliseconds: measureDurationMs);
+
       setState(() {
         _currentBeat = 0;
       });
-      // Small delay to allow audio buffer to start
-      Future.delayed(const Duration(milliseconds: 50), () {
+
+      // Start animation with a slight delay to compensate for audio engine startup latency.
+      // This ensures that the visual '1' aligns with the first audible click.
+      Future.delayed(const Duration(milliseconds: 150), () {
         if (mounted && ref.read(rhythmControllerProvider).isPlaying) {
           _measureController.repeat();
         }
       });
     } else {
-      _measureController.stop();
       _measureController.reset();
       setState(() {
         _currentBeat = 0;
@@ -77,9 +87,9 @@ class _RhythmScreenState extends ConsumerState<RhythmScreen> with SingleTickerPr
     final controller = ref.read(rhythmControllerProvider.notifier);
 
     ref.listen(rhythmControllerProvider, (previous, next) {
+      // Restart sync if play state changed, or if parameters changed while playing
       if (previous?.isPlaying != next.isPlaying ||
-          previous?.bpm != next.bpm ||
-          previous?.beatsPerMeasure != next.beatsPerMeasure) {
+          (next.isPlaying && (previous?.bpm != next.bpm || previous?.beatsPerMeasure != next.beatsPerMeasure || previous?.beatUnit != next.beatUnit))) {
         _syncController();
       }
     });
@@ -98,39 +108,33 @@ class _RhythmScreenState extends ConsumerState<RhythmScreen> with SingleTickerPr
               final bool isSmallScreen = constraints.maxHeight < 600;
 
               return Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // --- Zone A: BPM & Measure Info ---
-                  Expanded(
-                    flex: isSmallScreen ? 5 : 6,
-                    child: Stack(
-                      alignment: Alignment.center,
+                  // --- Zone A: BPM Display (Pure Flat) ---
+                  Padding(
+                    padding: const EdgeInsets.only(top: 24.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
                       children: [
-                        RhythmPulse(
-                          bpm: state.bpm,
-                          isPlaying: state.isPlaying,
-                          scale: isSmallScreen ? 0.7 : 1.0,
+                        Text(
+                          '${state.bpm}',
+                          style: GoogleFonts.sora(
+                            color: Colors.white,
+                            fontSize: isSmallScreen ? 72 : 96,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '${state.bpm}',
-                              style: GoogleFonts.sora(
-                                color: Colors.white,
-                                fontSize: isSmallScreen ? 64 : 84,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            Text(
-                              'BPM',
-                              style: GoogleFonts.manrope(
-                                color: Colors.white.withOpacity(0.7),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 2,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(width: 12),
+                        Text(
+                          'BPM',
+                          style: GoogleFonts.manrope(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: isSmallScreen ? 18 : 24,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1,
+                          ),
                         ),
                       ],
                     ),
@@ -138,7 +142,7 @@ class _RhythmScreenState extends ConsumerState<RhythmScreen> with SingleTickerPr
 
                   // --- Zone B: Beat Grid ---
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 24.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
                     child: BeatGrid(
                       count: state.beatsPerMeasure,
                       accents: state.accents,
@@ -146,8 +150,6 @@ class _RhythmScreenState extends ConsumerState<RhythmScreen> with SingleTickerPr
                       onToggleAccent: controller.toggleAccent,
                     ),
                   ),
-
-                  const SizedBox(height: 16),
 
                   // --- Zone C: Advanced Controls ---
                   Padding(
@@ -219,11 +221,9 @@ class _RhythmScreenState extends ConsumerState<RhythmScreen> with SingleTickerPr
                     ),
                   ),
 
-                  const SizedBox(height: 32),
-
                   // Play/Pause Button
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 24.0),
+                    padding: const EdgeInsets.only(bottom: 16.0),
                     child: GestureDetector(
                       onTap: controller.togglePlay,
                       child: AnimatedContainer(
@@ -242,6 +242,7 @@ class _RhythmScreenState extends ConsumerState<RhythmScreen> with SingleTickerPr
                       ),
                     ),
                   ),
+                  const Spacer(),
                 ],
               );
             },

@@ -17,24 +17,29 @@ class NoteIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (subdivision > 1) {
+      // For subdivisions, we show multiple small notes
       return Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          _SingleNote(unit: unit * (subdivision == 3 ? 2 : 2), color: color, size: size * 0.7),
-          const SizedBox(width: 2),
-          _SingleNote(unit: unit * (subdivision == 3 ? 2 : 2), color: color, size: size * 0.7),
-          if (subdivision >= 3) ...[
-            const SizedBox(width: 2),
-            _SingleNote(unit: unit * (subdivision == 3 ? 2 : 2), color: color, size: size * 0.7),
-          ],
-          if (subdivision >= 4) ...[
-            const SizedBox(width: 2),
-            _SingleNote(unit: unit * 2, color: color, size: size * 0.7),
-          ],
-        ],
+        children: List.generate(subdivision, (index) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 1),
+            child: _SingleNote(
+              unit: _getLogicalUnit(unit, subdivision),
+              color: color,
+              size: size * 0.6
+            ),
+          );
+        }),
       );
     }
     return _SingleNote(unit: unit, color: color, size: size);
+  }
+
+  int _getLogicalUnit(int baseUnit, int sub) {
+    if (sub == 2) return baseUnit * 2;
+    if (sub == 4) return baseUnit * 4;
+    if (sub == 3) return baseUnit * 2; // Approximate triplets as eighths
+    return baseUnit;
   }
 }
 
@@ -48,7 +53,7 @@ class _SingleNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      size: Size(size, size * 1.5),
+      size: Size(size, size * 1.4),
       painter: _NotePainter(unit: unit, color: color),
     );
   }
@@ -64,17 +69,19 @@ class _NotePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = color
+      ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.fill;
 
-    final double headWidth = size.width * 0.6;
-    final double headHeight = size.width * 0.45;
-    final double stemWidth = size.width * 0.1;
-    final double stemHeight = size.height * 0.8;
+    final double headWidth = size.width * 0.8;
+    final double headHeight = size.width * 0.55;
+    final double stemWidth = size.width * 0.12;
+    final double stemHeight = size.height * 0.85;
 
-    // Draw Note Head
+    // 1. Draw Note Head (Slanted Oval)
     canvas.save();
-    canvas.translate(headWidth * 0.4, size.height - headHeight / 2);
-    canvas.rotate(-0.2);
+    // Position head at the bottom left of the stem
+    canvas.translate(headWidth * 0.4, size.height - headHeight * 0.6);
+    canvas.rotate(-0.3); // Traditional slant
 
     if (unit == 2) {
       paint.style = PaintingStyle.stroke;
@@ -87,23 +94,25 @@ class _NotePainter extends CustomPainter {
     );
     canvas.restore();
 
-    // Draw Stem
+    // 2. Draw Stem (On the right, going UP)
     paint.style = PaintingStyle.fill;
-    final double stemX = headWidth * 0.75;
-    canvas.drawRect(
-      Rect.fromLTWH(stemX, size.height - stemHeight - headHeight / 4, stemWidth, stemHeight),
+    final double stemX = headWidth * 0.8;
+    final double stemTop = size.height - stemHeight - headHeight * 0.2;
+    final double stemBottom = size.height - headHeight * 0.6;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTRB(stemX, stemTop, stemX + stemWidth, stemBottom),
+        const Radius.circular(1),
+      ),
       paint,
     );
 
-    // Draw Flags
+    // 3. Draw Flags (for Quavers and Semiquavers)
     if (unit >= 8) {
-      final double flagX = stemX + stemWidth;
-      final double flagY = size.height - stemHeight - headHeight / 4;
-
-      _drawFlag(canvas, paint, flagX, flagY, size.width);
-
+      _drawFlag(canvas, paint, stemX + stemWidth, stemTop, size.width);
       if (unit >= 16) {
-        _drawFlag(canvas, paint, flagX, flagY + size.width * 0.25, size.width);
+        _drawFlag(canvas, paint, stemX + stemWidth, stemTop + size.height * 0.2, size.width);
       }
     }
   }
@@ -111,8 +120,17 @@ class _NotePainter extends CustomPainter {
   void _drawFlag(Canvas canvas, Paint paint, double x, double y, double width) {
     final path = Path();
     path.moveTo(x, y);
-    path.quadraticBezierTo(x + width * 0.5, y + width * 0.2, x + width * 0.4, y + width * 0.6);
-    path.quadraticBezierTo(x + width * 0.5, y + width * 0.3, x, y + width * 0.3);
+    // Classical flag shape
+    path.cubicTo(
+      x + width * 0.6, y + width * 0.2,
+      x + width * 0.7, y + width * 0.6,
+      x + width * 0.2, y + width * 0.9
+    );
+    path.cubicTo(
+      x + width * 0.5, y + width * 0.6,
+      x + width * 0.4, y + width * 0.3,
+      x, y + width * 0.2
+    );
     path.close();
     canvas.drawPath(path, paint);
   }
