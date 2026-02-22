@@ -30,7 +30,7 @@ class RhythmController extends Notifier<RhythmState> {
       state = state.copyWith(isPlaying: false);
     } else {
       state = state.copyWith(isPlaying: true);
-      _audioService.start(state.bpm);
+      _updateAudio();
     }
   }
 
@@ -40,7 +40,65 @@ class RhythmController extends Notifier<RhythmState> {
 
     state = state.copyWith(bpm: clampedBpm);
     if (state.isPlaying) {
-      _audioService.start(state.bpm);
+      _updateAudio();
+    }
+  }
+
+  void setBeatsPerMeasure(int value) {
+    final newValue = value.clamp(1, 16);
+    if (newValue == state.beatsPerMeasure) return;
+
+    final List<bool> newAccents = List.generate(newValue, (index) {
+      if (index < state.accents.length) {
+        return state.accents[index];
+      }
+      return false;
+    });
+
+    state = state.copyWith(
+      beatsPerMeasure: newValue,
+      accents: newAccents,
+    );
+    if (state.isPlaying) {
+      _updateAudio();
+    }
+  }
+
+  void setBeatUnit(int value) {
+    if (value == state.beatUnit) return;
+    state = state.copyWith(beatUnit: value);
+    if (state.isPlaying) {
+      _updateAudio();
+    }
+  }
+
+  void setSubdivision(int value) {
+    if (value == state.subdivision) return;
+    state = state.copyWith(subdivision: value);
+    if (state.isPlaying) {
+      _updateAudio();
+    }
+  }
+
+  void toggleAccent(int index) {
+    if (index < 0 || index >= state.accents.length) return;
+    final newAccents = List<bool>.from(state.accents);
+    newAccents[index] = !newAccents[index];
+    state = state.copyWith(accents: newAccents);
+    if (state.isPlaying) {
+      _updateAudio();
+    }
+  }
+
+  void setPreset(int numerator, int denominator) {
+    final List<bool> newAccents = List.generate(numerator, (index) => index == 0);
+    state = state.copyWith(
+      beatsPerMeasure: numerator,
+      beatUnit: denominator,
+      accents: newAccents,
+    );
+    if (state.isPlaying) {
+      _updateAudio();
     }
   }
 
@@ -85,5 +143,15 @@ class RhythmController extends Notifier<RhythmState> {
   void stop() {
     state = state.copyWith(isPlaying: false);
     _audioService.stop();
+  }
+
+  void _updateAudio() {
+    _audioService.start(
+      bpm: state.bpm,
+      beatsPerMeasure: state.beatsPerMeasure,
+      beatUnit: state.beatUnit,
+      subdivision: state.subdivision,
+      accents: state.accents,
+    );
   }
 }

@@ -29,7 +29,13 @@ class RhythmAudioService {
     }
   }
 
-  Future<void> start(int bpm) async {
+  Future<void> start({
+    required int bpm,
+    required int beatsPerMeasure,
+    required int beatUnit,
+    required int subdivision,
+    required List<bool> accents,
+  }) async {
     if (_isStarting) return;
     _isStarting = true;
 
@@ -47,9 +53,16 @@ class RhythmAudioService {
         _currentSource = null;
       }
 
-      final Uint8List wavBytes = WavGenerator.generateClickLoopWav(bpm);
+      final Uint8List wavBytes = WavGenerator.generateMeasureWav(
+        bpm: bpm,
+        beatsPerMeasure: beatsPerMeasure,
+        beatUnit: beatUnit,
+        subdivision: subdivision,
+        accents: accents,
+      );
+
       _currentSource = await _soloud!.loadMem(
-        'metronome_$bpm',
+        'metronome_measure',
         wavBytes,
       );
 

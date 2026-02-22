@@ -4,15 +4,81 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../theme/koda_theme.dart';
 import '../application/rhythm_controller.dart';
+import '../application/rhythm_state.dart';
+import 'widgets/beat_grid.dart';
 import 'widgets/rhythm_pulse.dart';
 
-class RhythmScreen extends ConsumerWidget {
+class RhythmScreen extends ConsumerStatefulWidget {
   const RhythmScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RhythmScreen> createState() => _RhythmScreenState();
+}
+
+class _RhythmScreenState extends ConsumerState<RhythmScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _measureController;
+  int _currentBeat = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _measureController = AnimationController(vsync: this);
+    _measureController.addListener(_updateBeat);
+    _syncController();
+  }
+
+  @override
+  void dispose() {
+    _measureController.removeListener(_updateBeat);
+    _measureController.dispose();
+    super.dispose();
+  }
+
+  void _updateBeat() {
+    final state = ref.read(rhythmControllerProvider);
+    if (!state.isPlaying) return;
+
+    final double beatDuration = 1.0 / state.beatsPerMeasure;
+    final int newBeat = (_measureController.value / beatDuration).floor().clamp(0, state.beatsPerMeasure - 1);
+
+    if (newBeat != _currentBeat) {
+      setState(() {
+        _currentBeat = newBeat;
+      });
+    }
+  }
+
+  void _syncController() {
+    final state = ref.read(rhythmControllerProvider);
+    if (state.isPlaying) {
+      final measureDurationMs = ((60000 / state.bpm) * state.beatsPerMeasure).round();
+      _measureController.duration = Duration(milliseconds: measureDurationMs);
+      setState(() {
+        _currentBeat = 0;
+      });
+      _measureController.repeat();
+    } else {
+      _measureController.stop();
+      _measureController.reset();
+      setState(() {
+        _currentBeat = 0;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(rhythmControllerProvider);
     final controller = ref.read(rhythmControllerProvider.notifier);
+
+    // Sync animation whenever isPlaying or tempo changes
+    ref.listen(rhythmControllerProvider, (previous, next) {
+      if (previous?.isPlaying != next.isPlaying ||
+          previous?.bpm != next.bpm ||
+          previous?.beatsPerMeasure != next.beatsPerMeasure) {
+        _syncController();
+      }
+    });
 
     final rhythmTheme = KodaTheme.dark.copyWith(
       scaffoldBackgroundColor: KodaColors.rhythm,
@@ -25,9 +91,9 @@ class RhythmScreen extends ConsumerWidget {
         body: SafeArea(
           child: Column(
             children: [
-              // --- Zone A: Pulse & BPM ---
+              // --- Zone A: BPM & Measure Info ---
               Expanded(
-                flex: 5,
+                flex: 4,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
@@ -61,14 +127,48 @@ class RhythmScreen extends ConsumerWidget {
                 ),
               ),
 
-              // --- Zone B: Controls ---
+              // --- Zone B: Beat Grid (Interactive) ---
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: BeatGrid(
+                  count: state.beatsPerMeasure,
+                  accents: state.accents,
+                  activeBeat: _currentBeat,
+                  onToggleAccent: controller.toggleAccent,
+                ),
+              ),
+
+              // --- Zone C: Advanced Controls ---
               Expanded(
-                flex: 4,
+                flex: 6,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(
                     children: [
-                      // Slider
+                      // Time Signature & Subdivision Selectors
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _SelectorCard(
+                              label: 'SIGNATURE',
+                              value: '${state.beatsPerMeasure}/${state.beatUnit}',
+                              onTap: () => _showSignaturePicker(context, state, controller),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _SelectorCard(
+                              label: 'SUBDIVISION',
+                              value: _getSubdivisionLabel(state.subdivision),
+                              onTap: () => _showSubdivisionPicker(context, state, controller),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // BPM Slider
                       SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           activeTrackColor: Colors.white,
@@ -79,46 +179,29 @@ class RhythmScreen extends ConsumerWidget {
                         ),
                         child: Slider(
                           value: state.bpm.toDouble(),
-                          min: RhythmController.minBpm.toDouble(),
-                          max: RhythmController.maxBpm.toDouble(),
+                          min: 30,
+                          max: 300,
                           onChanged: (value) => controller.setBpm(value.toInt()),
                         ),
                       ),
 
-                      const SizedBox(height: 16),
-
-                      // +/- and Tap Tempo
+                      // Fine BPM and Tap
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _ControlButton(
+                          _IconButton(
                             onPressed: controller.decrementBpm,
                             icon: Icons.remove,
-                            label: ' -1 ',
+                            tooltip: 'Decrease BPM',
                           ),
-                          GestureDetector(
+                          _ActionButton(
+                            label: 'TAP TEMPO',
                             onTap: controller.tapTempo,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(30),
-                                border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-                              ),
-                              child: Text(
-                                'TAP TEMPO',
-                                style: GoogleFonts.manrope(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
                           ),
-                          _ControlButton(
+                          _IconButton(
                             onPressed: controller.incrementBpm,
                             icon: Icons.add,
-                            label: ' +1 ',
+                            tooltip: 'Increase BPM',
                           ),
                         ],
                       ),
@@ -137,7 +220,6 @@ class RhythmScreen extends ConsumerWidget {
                             decoration: const BoxDecoration(
                               color: Colors.white,
                               shape: BoxShape.circle,
-                              // Strictly 2D - No shadows
                             ),
                             child: Icon(
                               state.isPlaying ? Icons.pause : Icons.play_arrow,
@@ -157,32 +239,269 @@ class RhythmScreen extends ConsumerWidget {
       ),
     );
   }
+
+  String _getSubdivisionLabel(int value) {
+    switch (value) {
+      case 2: return '8ths';
+      case 3: return 'Triplets';
+      case 4: return '16ths';
+      default: return 'None';
+    }
+  }
+
+  void _showSignaturePicker(BuildContext context, RhythmState state, RhythmController controller) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: KodaColors.darkBackground,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Time Signature', style: GoogleFonts.sora(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _PickerColumn(
+                    label: 'Beats',
+                    value: state.beatsPerMeasure,
+                    min: 1,
+                    max: 16,
+                    onChanged: (v) => controller.setBeatsPerMeasure(v),
+                  ),
+                  Text('/', style: GoogleFonts.sora(fontSize: 48, color: Colors.white)),
+                  _PickerColumn(
+                    label: 'Unit',
+                    value: state.beatUnit,
+                    options: const [2, 4, 8, 16],
+                    onChanged: (v) => controller.setBeatUnit(v),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Divider(color: Colors.white24),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                children: [
+                  _PresetChip(label: '4/4', onTap: () => controller.setPreset(4, 4)),
+                  _PresetChip(label: '3/4', onTap: () => controller.setPreset(3, 4)),
+                  _PresetChip(label: '6/8', onTap: () => controller.setPreset(6, 8)),
+                  _PresetChip(label: '7/8', onTap: () => controller.setPreset(7, 8)),
+                  _PresetChip(label: '5/4', onTap: () => controller.setPreset(5, 4)),
+                ],
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSubdivisionPicker(BuildContext context, RhythmState state, RhythmController controller) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: KodaColors.darkBackground,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Subdivisions', style: GoogleFonts.sora(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+              const SizedBox(height: 24),
+              ListTile(
+                title: const Text('None', style: TextStyle(color: Colors.white)),
+                onTap: () { controller.setSubdivision(1); Navigator.pop(context); },
+                trailing: state.subdivision == 1 ? const Icon(Icons.check, color: KodaColors.rhythm) : null,
+              ),
+              ListTile(
+                title: const Text('8th Notes', style: TextStyle(color: Colors.white)),
+                onTap: () { controller.setSubdivision(2); Navigator.pop(context); },
+                trailing: state.subdivision == 2 ? const Icon(Icons.check, color: KodaColors.rhythm) : null,
+              ),
+              ListTile(
+                title: const Text('Triplets', style: TextStyle(color: Colors.white)),
+                onTap: () { controller.setSubdivision(3); Navigator.pop(context); },
+                trailing: state.subdivision == 3 ? const Icon(Icons.check, color: KodaColors.rhythm) : null,
+              ),
+              ListTile(
+                title: const Text('16th Notes', style: TextStyle(color: Colors.white)),
+                onTap: () { controller.setSubdivision(4); Navigator.pop(context); },
+                trailing: state.subdivision == 4 ? const Icon(Icons.check, color: KodaColors.rhythm) : null,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
-class _ControlButton extends StatelessWidget {
+class _SelectorCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  const _SelectorCard({required this.label, required this.value, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
+        ),
+        child: Column(
+          children: [
+            Text(label, style: GoogleFonts.manrope(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 1)),
+            const SizedBox(height: 4),
+            Text(value, style: GoogleFonts.sora(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _IconButton extends StatelessWidget {
   final VoidCallback onPressed;
   final IconData icon;
-  final String label;
+  final String tooltip;
 
-  const _ControlButton({
-    required this.onPressed,
-    required this.icon,
+  const _IconButton({required this.onPressed, required this.icon, required this.tooltip});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onPressed,
+      tooltip: tooltip,
+      icon: Icon(icon, color: Colors.white, size: 28),
+      style: IconButton.styleFrom(backgroundColor: Colors.white.withOpacity(0.1)),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _ActionButton({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Colors.white.withOpacity(0.3)),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.manrope(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
+        ),
+      ),
+    );
+  }
+}
+
+class _PresetChip extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _PresetChip({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionChip(
+      label: Text(label),
+      onPressed: onTap,
+      backgroundColor: Colors.white.withOpacity(0.1),
+      labelStyle: const TextStyle(color: Colors.white),
+      side: BorderSide.none,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    );
+  }
+}
+
+class _PickerColumn extends StatelessWidget {
+  final String label;
+  final int value;
+  final int? min;
+  final int? max;
+  final List<int>? options;
+  final Function(int) onChanged;
+
+  const _PickerColumn({
     required this.label,
+    required this.value,
+    this.min,
+    this.max,
+    this.options,
+    required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        IconButton(
-          onPressed: onPressed,
-          tooltip: label,
-          icon: Icon(icon, color: Colors.white, size: 32),
-          style: IconButton.styleFrom(
-            backgroundColor: Colors.white.withOpacity(0.1),
-          ),
-        ),
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            _MiniButton(icon: Icons.remove, onPressed: () {
+              if (options != null) {
+                final idx = options!.indexOf(value);
+                if (idx > 0) onChanged(options![idx - 1]);
+              } else if (min != null && value > min!) {
+                onChanged(value - 1);
+              }
+            }),
+            Container(
+              width: 50,
+              alignment: Alignment.center,
+              child: Text('$value', style: GoogleFonts.sora(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+            ),
+            _MiniButton(icon: Icons.add, onPressed: () {
+               if (options != null) {
+                final idx = options!.indexOf(value);
+                if (idx < options!.length - 1) onChanged(options![idx + 1]);
+              } else if (max != null && value < max!) {
+                onChanged(value + 1);
+              }
+            }),
+          ],
+        )
       ],
+    );
+  }
+}
+
+class _MiniButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _MiniButton({required this.icon, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(icon, color: Colors.white, size: 20),
+      onPressed: onPressed,
+      style: IconButton.styleFrom(backgroundColor: Colors.white10),
+      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+      padding: EdgeInsets.zero,
     );
   }
 }

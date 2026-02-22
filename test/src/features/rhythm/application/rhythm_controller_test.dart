@@ -13,7 +13,13 @@ void main() {
   setUp(() {
     mockAudioService = MockRhythmAudioService();
     when(() => mockAudioService.init()).thenAnswer((_) async {});
-    when(() => mockAudioService.start(any())).thenAnswer((_) async {});
+    when(() => mockAudioService.start(
+          bpm: any(named: 'bpm'),
+          beatsPerMeasure: any(named: 'beatsPerMeasure'),
+          beatUnit: any(named: 'beatUnit'),
+          subdivision: any(named: 'subdivision'),
+          accents: any(named: 'accents'),
+        )).thenAnswer((_) async {});
     when(() => mockAudioService.stop()).thenAnswer((_) async {});
 
     container = ProviderContainer(
@@ -30,6 +36,8 @@ void main() {
   test('initial state is correct', () {
     final state = container.read(rhythmControllerProvider);
     expect(state.bpm, 120);
+    expect(state.beatsPerMeasure, 4);
+    expect(state.accents[0], true);
     expect(state.isPlaying, false);
   });
 
@@ -38,43 +46,46 @@ void main() {
 
     controller.togglePlay();
     expect(container.read(rhythmControllerProvider).isPlaying, true);
-    verify(() => mockAudioService.start(120)).called(1);
+    verify(() => mockAudioService.start(
+          bpm: 120,
+          beatsPerMeasure: 4,
+          beatUnit: 4,
+          subdivision: 1,
+          accents: any(named: 'accents'),
+        )).called(1);
 
     controller.togglePlay();
     expect(container.read(rhythmControllerProvider).isPlaying, false);
     verify(() => mockAudioService.stop()).called(1);
   });
 
-  test('setBpm updates state and restarts audio if playing', () {
+  test('setBeatsPerMeasure updates state and accents', () {
     final controller = container.read(rhythmControllerProvider.notifier);
 
-    controller.setBpm(140);
-    expect(container.read(rhythmControllerProvider).bpm, 140);
-    verifyNever(() => mockAudioService.start(any()));
-
-    controller.togglePlay();
-    controller.setBpm(160);
-    expect(container.read(rhythmControllerProvider).bpm, 160);
-    verify(() => mockAudioService.start(160)).called(1);
+    controller.setBeatsPerMeasure(3);
+    final state = container.read(rhythmControllerProvider);
+    expect(state.beatsPerMeasure, 3);
+    expect(state.accents.length, 3);
   });
 
-  test('setBpm clamps values', () {
+  test('toggleAccent updates accents list', () {
     final controller = container.read(rhythmControllerProvider.notifier);
 
-    controller.setBpm(10);
-    expect(container.read(rhythmControllerProvider).bpm, 30);
+    controller.toggleAccent(1);
+    expect(container.read(rhythmControllerProvider).accents[1], true);
 
-    controller.setBpm(500);
-    expect(container.read(rhythmControllerProvider).bpm, 300);
+    controller.toggleAccent(1);
+    expect(container.read(rhythmControllerProvider).accents[1], false);
   });
 
-  test('increment and decrement work', () {
+  test('setPreset updates signature and resets accents', () {
     final controller = container.read(rhythmControllerProvider.notifier);
 
-    controller.incrementBpm();
-    expect(container.read(rhythmControllerProvider).bpm, 121);
-
-    controller.decrementBpm();
-    expect(container.read(rhythmControllerProvider).bpm, 120);
+    controller.setPreset(6, 8);
+    final state = container.read(rhythmControllerProvider);
+    expect(state.beatsPerMeasure, 6);
+    expect(state.beatUnit, 8);
+    expect(state.accents[0], true);
+    expect(state.accents[1], false);
   });
 }

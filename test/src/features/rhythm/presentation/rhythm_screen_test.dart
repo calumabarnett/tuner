@@ -13,7 +13,13 @@ void main() {
   setUp(() {
     mockAudioService = MockRhythmAudioService();
     when(() => mockAudioService.init()).thenAnswer((_) async {});
-    when(() => mockAudioService.start(any())).thenAnswer((_) async {});
+    when(() => mockAudioService.start(
+          bpm: any(named: 'bpm'),
+          beatsPerMeasure: any(named: 'beatsPerMeasure'),
+          beatUnit: any(named: 'beatUnit'),
+          subdivision: any(named: 'subdivision'),
+          accents: any(named: 'accents'),
+        )).thenAnswer((_) async {});
     when(() => mockAudioService.stop()).thenAnswer((_) async {});
   });
 
@@ -28,41 +34,27 @@ void main() {
     );
   }
 
-  testWidgets('renders BPM and controls', (tester) async {
+  testWidgets('renders BPM and professional controls', (tester) async {
     await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pump(); // Ensure state is built
+    await tester.pump();
 
     expect(find.text('120'), findsOneWidget);
-    expect(find.text('BPM'), findsOneWidget);
+    expect(find.text('SIGNATURE'), findsOneWidget);
+    expect(find.text('SUBDIVISION'), findsOneWidget);
+    expect(find.text('4/4'), findsOneWidget);
+    expect(find.text('None'), findsOneWidget);
     expect(find.byType(Slider), findsOneWidget);
-    expect(find.text('TAP TEMPO'), findsOneWidget);
-    expect(find.byIcon(Icons.play_arrow), findsOneWidget);
   });
 
-  testWidgets('increment button increases BPM', (tester) async {
+  testWidgets('tapping signature opens bottom sheet', (tester) async {
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pump();
 
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.tap(find.text('SIGNATURE'));
+    await tester.pumpAndSettle();
 
-    expect(find.text('121'), findsOneWidget);
-  });
-
-  testWidgets('toggle play button changes icon', (tester) async {
-    await tester.pumpWidget(createWidgetUnderTest());
-    await tester.pump();
-
-    await tester.tap(find.byIcon(Icons.play_arrow));
-    await tester.pump();
-
-    expect(find.byIcon(Icons.pause), findsOneWidget);
-    verify(() => mockAudioService.start(120)).called(1);
-
-    await tester.tap(find.byIcon(Icons.pause));
-    await tester.pump();
-
-    expect(find.byIcon(Icons.play_arrow), findsOneWidget);
-    verify(() => mockAudioService.stop()).called(1);
+    expect(find.text('Time Signature'), findsOneWidget);
+    expect(find.text('Beats'), findsOneWidget);
+    expect(find.text('Unit'), findsOneWidget);
   });
 }
