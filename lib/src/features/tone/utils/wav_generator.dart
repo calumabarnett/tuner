@@ -68,6 +68,125 @@ class WavGenerator {
     return buffer.buffer.asUint8List();
   }
 
+  /// Generates a WAV loop of exactly one beat at the given BPM, with a click at the start.
+  static Uint8List generateClickLoopWav(int bpm, {
+    double frequency = 1000.0,
+    double clickDuration = 0.05,
+    int sampleRate = 44100,
+  }) {
+    final double beatDuration = 60.0 / bpm;
+    final int numSamples = (beatDuration * sampleRate).toInt();
+    final int clickSamples = (clickDuration * sampleRate).toInt();
+
+    final int byteRate = sampleRate * 2;
+    final int dataSize = numSamples * 2;
+    final int totalSize = 36 + dataSize;
+
+    final buffer = ByteData(totalSize + 8);
+    int offset = 0;
+
+    _writeString(buffer, offset, 'RIFF');
+    offset += 4;
+    buffer.setUint32(offset, totalSize, Endian.little);
+    offset += 4;
+    _writeString(buffer, offset, 'WAVE');
+    offset += 4;
+
+    _writeString(buffer, offset, 'fmt ');
+    offset += 4;
+    buffer.setUint32(offset, 16, Endian.little);
+    offset += 4;
+    buffer.setUint16(offset, 1, Endian.little);
+    offset += 2;
+    buffer.setUint16(offset, 1, Endian.little);
+    offset += 2;
+    buffer.setUint32(offset, sampleRate, Endian.little);
+    offset += 4;
+    buffer.setUint32(offset, byteRate, Endian.little);
+    offset += 4;
+    buffer.setUint16(offset, 2, Endian.little);
+    offset += 2;
+    buffer.setUint16(offset, 16, Endian.little);
+    offset += 2;
+
+    _writeString(buffer, offset, 'data');
+    offset += 4;
+    buffer.setUint32(offset, dataSize, Endian.little);
+    offset += 4;
+
+    for (int i = 0; i < numSamples; i++) {
+      double sample = 0;
+      if (i < clickSamples) {
+        final double t = i / sampleRate;
+        final double envelope = exp(-i / (clickSamples / 3));
+        sample = sin(2 * pi * frequency * t) * envelope;
+      }
+
+      final int value = (sample * 32767).round().clamp(-32768, 32767);
+      buffer.setInt16(offset, value, Endian.little);
+      offset += 2;
+    }
+
+    return buffer.buffer.asUint8List();
+  }
+
+  /// Generates a short percussive click sound.
+  static Uint8List generateClickWav({
+    double frequency = 1000.0,
+    double duration = 0.05,
+    int sampleRate = 44100,
+  }) {
+    final int numSamples = (duration * sampleRate).toInt();
+    final int byteRate = sampleRate * 2;
+    final int dataSize = numSamples * 2;
+    final int totalSize = 36 + dataSize;
+
+    final buffer = ByteData(totalSize + 8);
+    int offset = 0;
+
+    _writeString(buffer, offset, 'RIFF');
+    offset += 4;
+    buffer.setUint32(offset, totalSize, Endian.little);
+    offset += 4;
+    _writeString(buffer, offset, 'WAVE');
+    offset += 4;
+
+    _writeString(buffer, offset, 'fmt ');
+    offset += 4;
+    buffer.setUint32(offset, 16, Endian.little);
+    offset += 4;
+    buffer.setUint16(offset, 1, Endian.little);
+    offset += 2;
+    buffer.setUint16(offset, 1, Endian.little);
+    offset += 2;
+    buffer.setUint32(offset, sampleRate, Endian.little);
+    offset += 4;
+    buffer.setUint32(offset, byteRate, Endian.little);
+    offset += 4;
+    buffer.setUint16(offset, 2, Endian.little);
+    offset += 2;
+    buffer.setUint16(offset, 16, Endian.little);
+    offset += 2;
+
+    _writeString(buffer, offset, 'data');
+    offset += 4;
+    buffer.setUint32(offset, dataSize, Endian.little);
+    offset += 4;
+
+    for (int i = 0; i < numSamples; i++) {
+      final double t = i / sampleRate;
+      // Exponential decay envelope
+      final double envelope = exp(-i / (numSamples / 3));
+      final double sample = sin(2 * pi * frequency * t) * envelope;
+
+      final int value = (sample * 32767).round().clamp(-32768, 32767);
+      buffer.setInt16(offset, value, Endian.little);
+      offset += 2;
+    }
+
+    return buffer.buffer.asUint8List();
+  }
+
   static void _writeString(ByteData buffer, int offset, String s) {
     for (int i = 0; i < s.length; i++) {
       buffer.setUint8(offset + i, s.codeUnitAt(i));
