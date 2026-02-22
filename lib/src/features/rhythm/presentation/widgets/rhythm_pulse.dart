@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 class RhythmPulse extends StatefulWidget {
   final int bpm;
   final bool isPlaying;
+  final double scale; // Added to control size
 
   const RhythmPulse({
     super.key,
     required this.bpm,
     required this.isPlaying,
+    this.scale = 1.0,
   });
 
   @override
@@ -28,10 +30,10 @@ class _RhythmPulseState extends State<RhythmPulse> with SingleTickerProviderStat
       duration: Duration(milliseconds: (60000 / widget.bpm).round()),
     );
 
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
-    _opacityAnimation = Tween<double>(begin: 0.6, end: 0.0).animate(
+    _opacityAnimation = Tween<double>(begin: 0.5, end: 0.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
 
@@ -67,6 +69,8 @@ class _RhythmPulseState extends State<RhythmPulse> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final double baseSize = 200 * widget.scale;
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
@@ -78,8 +82,8 @@ class _RhythmPulseState extends State<RhythmPulse> with SingleTickerProviderStat
               Transform.scale(
                 scale: _scaleAnimation.value,
                 child: Container(
-                  width: 240,
-                  height: 240,
+                  width: baseSize,
+                  height: baseSize,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
@@ -91,12 +95,12 @@ class _RhythmPulseState extends State<RhythmPulse> with SingleTickerProviderStat
               ),
             // Static Ring
             Container(
-              width: 240,
-              height: 240,
+              width: baseSize,
+              height: baseSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withOpacity(0.2),
                   width: 4,
                 ),
               ),

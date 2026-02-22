@@ -55,6 +55,6 @@ void main() {
 
     expect(find.text('Time Signature'), findsOneWidget);
     expect(find.text('Beats'), findsOneWidget);
-    expect(find.text('Unit'), findsOneWidget);
+    expect(find.text('Unit (Crotchet)'), findsOneWidget);
   });
 }
